@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { Dropzone } from '@/components/console/Dropzone'
+import { describeMeta } from '@/components/console/describeMeta'
 import { FileRow } from '@/components/console/FileRow'
 import { Panel, ReadoutRow } from '@/components/console/Panel'
 import { Button } from '@/components/ui/button'
@@ -9,6 +10,7 @@ import { formatBytes } from '@/lib/format'
 import type { useFileJob } from '@/lib/useFileJob'
 import type { ToolMeta } from '@/tools/types'
 import { ResultList } from './ResultList'
+import { SortableFileList } from './SortableFileList'
 import type { useToolFiles } from './useToolFiles'
 
 interface ToolLayoutProps {
@@ -20,6 +22,13 @@ interface ToolLayoutProps {
   onRun: () => void
   canRun?: boolean
   footnote?: ReactNode
+  /** let the user drag files into order (merge, images to PDF) */
+  sortable?: boolean
+  /** hint under the intake list */
+  intakeHint?: string
+  /** full-width panel between settings and output, e.g. a page grid */
+  workbench?: ReactNode
+  compareSizes?: boolean
 }
 
 export function ToolLayout({
@@ -31,6 +40,10 @@ export function ToolLayout({
   onRun,
   canRun = true,
   footnote,
+  sortable = false,
+  intakeHint,
+  workbench,
+  compareSizes = true,
 }: ToolLayoutProps) {
   const running = job.status === 'running'
   const pct = job.total ? Math.round((job.done / job.total) * 100) : 0
@@ -70,21 +83,33 @@ export function ToolLayout({
           }
         >
           {files.files.length > 0 && (
-            <div className="mt-3.5 flex max-h-[360px] flex-col gap-[7px] overflow-y-auto">
-              {files.files.map((f) => (
-                <FileRow
-                  key={f.id}
-                  file={f.file}
-                  detail={formatBytes(f.file.size)}
-                  onRemove={running ? undefined : () => files.remove(f.id)}
+            <div className="mt-3.5 max-h-[420px] overflow-y-auto">
+              {sortable ? (
+                <SortableFileList
+                  files={files.files}
+                  onMove={files.move}
+                  onRemove={files.remove}
+                  disabled={running}
                 />
-              ))}
+              ) : (
+                <div className="flex flex-col gap-[7px]">
+                  {files.files.map((f) => (
+                    <FileRow
+                      key={f.id}
+                      file={f.file}
+                      detail={describeMeta(f.meta, f.file.size)}
+                      onRemove={running ? undefined : () => files.remove(f.id)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
           <Dropzone
             onFiles={files.add}
             accept={meta.accept}
             multiple={meta.multiple}
+            hint={intakeHint}
             className="mt-[11px] flex-1"
           />
           {files.rejected > 0 && (
@@ -112,8 +137,10 @@ export function ToolLayout({
         </Panel>
       </div>
 
+      {workbench}
+
       <Panel
-        label="C · Output"
+        label={workbench ? 'D · Output' : 'C · Output'}
         tone="deep"
         meta={
           job.status === 'done' ? (
@@ -147,7 +174,11 @@ export function ToolLayout({
           </p>
         )}
         {job.status === 'done' && (
-          <ResultList results={job.results} zipName={`klyro-${meta.slug}.zip`} />
+          <ResultList
+            results={job.results}
+            zipName={`klyro-${meta.slug}.zip`}
+            compareSizes={compareSizes}
+          />
         )}
       </Panel>
     </div>

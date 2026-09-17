@@ -8,9 +8,11 @@ import { cn } from '@/lib/utils'
 interface ResultListProps {
   results: OutputFile[]
   zipName: string
+  /** show before → after sizes; off for tools that change structure rather than shrink files */
+  compareSizes?: boolean
 }
 
-export function ResultList({ results, zipName }: ResultListProps) {
+export function ResultList({ results, zipName, compareSizes = true }: ResultListProps) {
   if (!results.length) return null
   const before = results.reduce((n, r) => n + r.sourceSize, 0)
   const after = results.reduce((n, r) => n + r.file.size, 0)
@@ -36,10 +38,16 @@ export function ResultList({ results, zipName }: ResultListProps) {
                   {r.file.name}
                 </div>
                 <div className="readout text-[10px] tracking-[0.06em] text-dim">
-                  {formatBytes(r.sourceSize)} → {formatBytes(r.file.size)}
-                  <span className={cn('ml-2', smaller ? 'text-local' : 'text-egress')}>
-                    {formatSaving(r.sourceSize, r.file.size)}
-                  </span>
+                  {compareSizes ? (
+                    <>
+                      {formatBytes(r.sourceSize)} → {formatBytes(r.file.size)}
+                      <span className={cn('ml-2', smaller ? 'text-local' : 'text-egress')}>
+                        {formatSaving(r.sourceSize, r.file.size)}
+                      </span>
+                    </>
+                  ) : (
+                    formatBytes(r.file.size)
+                  )}
                   {r.width && r.height ? ` · ${r.width}×${r.height}` : ''}
                   {r.note ? ` · ${r.note}` : ''}
                 </div>
@@ -61,7 +69,8 @@ export function ResultList({ results, zipName }: ResultListProps) {
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <span className="readout text-[10px] text-faint">
-          Total {formatBytes(before)} →{' '}
+          {results.length} file{results.length === 1 ? '' : 's'} ·{' '}
+          {compareSizes && <>{formatBytes(before)} → </>}
           <span className="text-foreground">{formatBytes(after)}</span>
         </span>
         {results.length > 1 && (
