@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+dist-ssr/
+.aws-sam/
+coverage/
+*.tsbuildinfo
+
+# env
+.env
+.env.*
+!.env.example
+samconfig.toml
+
+# logs
+*.log
+
+# editors / os
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
