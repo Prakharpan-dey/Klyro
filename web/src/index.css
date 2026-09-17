@@ -1,1 +1,139 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-heading: var(--font-sans);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* console palette */
+  --color-panel: var(--panel);
+  --color-well: var(--well);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-soft: var(--text-soft);
+  --color-dim: var(--text-dim);
+  --color-faint: var(--text-faint);
+  --color-local: var(--local);
+  --color-egress: var(--egress);
+
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-4xl: 0;
+
+  --animate-caret: caret 1.05s steps(2, end) infinite;
+
+  @keyframes caret {
+    0%,
+    100% {
+      opacity: 0.12;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+}
+
+:root,
+.dark {
+  --radius: 0;
+  --background: #04070d;
+  --foreground: #dce9f7;
+  --card: #0a1220;
+  --card-foreground: #dce9f7;
+  --popover: #0a1220;
+  --popover-foreground: #dce9f7;
+  --primary: #4db8ff;
+  --primary-foreground: #04070d;
+  --secondary: #0d1a2c;
+  --secondary-foreground: #dce9f7;
+  --muted: #12283f;
+  --muted-foreground: #82a0c2;
+  --accent: #10223a;
+  --accent-foreground: #dce9f7;
+  --destructive: #ff6b7a;
+  --border: #1e4874;
+  --input: #1e4874;
+  --ring: #4db8ff;
+
+  --panel: #08111f;
+  --well: #070d18;
+  --line: #1e4874;
+  --line-soft: #12283f;
+  --text-soft: #8fa9c6;
+  --text-dim: #82a0c2;
+  --text-faint: #6f8bb0;
+  --local: #3ddc97;
+  --egress: #ffb020;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply min-h-dvh bg-background font-mono text-foreground antialiased;
+    background-image:
+      linear-gradient(rgb(64 160 255 / 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(64 160 255 / 0.05) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  ::selection {
+    background: rgb(77 184 255 / 0.35);
+  }
+  a {
+    @apply text-primary transition-colors hover:text-[#9ad6ff];
+  }
+}
+
+@layer utilities {
+  /* uppercase mono label used on panel headers and readouts */
+  .label {
+    @apply font-mono text-[10px] leading-none font-semibold tracking-[0.18em] text-dim uppercase;
+  }
+  .readout {
+    @apply font-mono text-[11px] tracking-[0.08em] uppercase;
+  }
+  .stripes {
+    background: repeating-linear-gradient(
+      135deg,
+      rgb(77 184 255 / 0.22) 0 3px,
+      transparent 3px 7px
+    );
+  }
+}
