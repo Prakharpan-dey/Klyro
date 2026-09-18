@@ -1,7 +1,7 @@
 export type ToolCategory = 'image' | 'pdf'
 
 /** Section shown in the tool index; tools within a group share a workflow. */
-export type ToolGroup = 'Image' | 'Pages' | 'Stamps' | 'Convert' | 'Inspect' | 'Secure'
+export type ToolGroup = 'Image' | 'Pages' | 'Stamps' | 'Optimise' | 'Convert' | 'Inspect' | 'Secure'
 
 export interface ToolMeta {
   slug: string

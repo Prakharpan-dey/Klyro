@@ -27,7 +27,7 @@ export const categoryLabel: Record<ToolMeta['category'], string> = {
 
 /** Tools by section, in the order the index shows them. */
 export const toolGroups: { group: ToolGroup; tools: Tool[] }[] = (
-  ['Image', 'Pages', 'Stamps', 'Convert', 'Inspect', 'Secure'] as ToolGroup[]
+  ['Image', 'Pages', 'Stamps', 'Optimise', 'Convert', 'Inspect', 'Secure'] as ToolGroup[]
 )
   .map((group) => ({ group, tools: tools.filter((t) => t.group === group) }))
   .filter((section) => section.tools.length > 0)
