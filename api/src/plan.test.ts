@@ -101,9 +101,9 @@ describe('prompt', () => {
 })
 
 describe('tool spec', () => {
-  it('describes the plan shape for the Converse API', () => {
-    const schema = SUBMIT_PLAN_TOOL.inputSchema?.json as Record<string, any>
-    expect(SUBMIT_PLAN_TOOL.name).toBe('submit_plan')
+  it('describes the plan shape as an openai function tool', () => {
+    const schema = SUBMIT_PLAN_TOOL.function.parameters as Record<string, any>
+    expect(SUBMIT_PLAN_TOOL.function.name).toBe('submit_plan')
     expect(schema.required).toEqual(['summary', 'clarification', 'steps'])
     const pattern = new RegExp(schema.properties.steps.items.properties.inputs.items.pattern)
     expect(pattern.test('file:0')).toBe(true)
@@ -112,7 +112,7 @@ describe('tool spec', () => {
   })
 
   it('offers every op the executor implements', () => {
-    const schema = SUBMIT_PLAN_TOOL.inputSchema?.json as Record<string, any>
+    const schema = SUBMIT_PLAN_TOOL.function.parameters as Record<string, any>
     expect(schema.properties.steps.items.properties.op.enum).toContain('pdf.merge')
   })
 })
