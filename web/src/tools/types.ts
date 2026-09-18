@@ -17,6 +17,10 @@ export interface ToolMeta {
 }
 
 export const PDF_ACCEPT = ['application/pdf']
+export const SHEET_ACCEPT = [
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+]
 export const IMAGE_ACCEPT = [
   'image/jpeg',
   'image/png',
