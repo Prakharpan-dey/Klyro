@@ -7,7 +7,7 @@ import { defineConfig } from 'vite'
 import pkg from './package.json' with { type: 'json' }
 
 // `npm run preview` serves the production build with the same CSP as Amplify, so breakage shows up locally
-const csp = /value: "(default-src[^"]+)"/.exec(readFileSync('customHttp.yml', 'utf8'))?.[1]
+const csp = /value: "(default-src[^"]+)"/.exec(readFileSync('../customHttp.yml', 'utf8'))?.[1]
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
