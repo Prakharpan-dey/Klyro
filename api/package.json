@@ -1,0 +1,29 @@
+{
+  "name": "klyro-api",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env scripts/dev-server.ts",
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "lint": "oxlint src scripts",
+    "format": "prettier --write .",
+    "build": "sam build",
+    "deploy": "sam deploy --guided"
+  },
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@anthropic-ai/bedrock-sdk": "^0.33.6",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.163",
+    "@types/node": "^24.13.5",
+    "esbuild": "^0.28.2",
+    "oxlint": "^1.83.0",
+    "prettier": "^3.9.7",
+    "tsx": "^4.23.13",
+    "typescript": "~6.0.2",
+    "vitest": "^5.0.1"
+  }
+}

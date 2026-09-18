@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Klyro planner API. Turns an instruction plus file metadata into a plan. Never receives file contents.
+
+Parameters:
+  ModelId:
+    Type: String
+    Default: anthropic.claude-opus-5
+    Description: Claude model ID on Amazon Bedrock
+  AllowedOrigin:
+    Type: String
+    Default: http://localhost:5173
+    Description: Origin of the web app (e.g. https://main.xxxx.amplifyapp.com)
+  MockPlanner:
+    Type: String
+    Default: '0'
+    AllowedValues: ['0', '1']
+    Description: Set to 1 to use the keyword planner instead of Bedrock
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    Architectures: [arm64]
+    MemorySize: 256
+    Timeout: 30
+
+Resources:
+  PlanApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref AllowedOrigin
+        AllowMethods: [POST, OPTIONS]
+        AllowHeaders: [content-type]
+        MaxAge: 600
+      DefaultRouteSettings:
+        ThrottlingRateLimit: 5
+        ThrottlingBurstLimit: 10
+
+  PlanFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: plan.handler
+      CodeUri: ./
+      LoggingConfig:
+        LogGroup: !Ref PlanLogs
+      Environment:
+        Variables:
+          MODEL_ID: !Ref ModelId
+          MOCK_PLANNER: !Ref MockPlanner
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: bedrock-mantle:CreateInference
+              Resource: '*'
+      Events:
+        Plan:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref PlanApi
+            Path: /plan
+            Method: POST
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Format: esm
+        Target: es2022
+        Platform: node
+        Minify: true
+        Sourcemap: false
+        EntryPoints:
+          - src/plan.ts
+        OutExtension:
+          - .js=.mjs
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+
+  PlanLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 7
+
+Outputs:
+  ApiUrl:
+    Description: Set this as VITE_API_URL in the web app
+    Value: !Sub https://${PlanApi}.execute-api.${AWS::Region}.amazonaws.com
