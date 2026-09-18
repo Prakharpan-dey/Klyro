@@ -1,0 +1,8 @@
+{
+  "version": "2.0",
+  "routeKey": "POST /plan",
+  "rawPath": "/plan",
+  "headers": { "content-type": "application/json" },
+  "isBase64Encoded": false,
+  "body": "{\"instruction\":\"merge these and remove page 3\",\"files\":[{\"index\":0,\"kind\":\"pdf\",\"mime\":\"application/pdf\",\"sizeKB\":2100,\"pages\":4},{\"index\":1,\"kind\":\"pdf\",\"mime\":\"application/pdf\",\"sizeKB\":880,\"pages\":2}]}"
+}
