@@ -5,8 +5,8 @@ Description: Klyro planner API. Turns an instruction plus file metadata into a p
 Parameters:
   ModelId:
     Type: String
-    Default: anthropic.claude-opus-5
-    Description: Claude model ID on Amazon Bedrock
+    Default: openai.gpt-oss-120b-1:0
+    Description: Bedrock model ID used by the planner (must support the Converse API and tool use)
   AllowedOrigin:
     Type: String
     Default: http://localhost:5173
@@ -42,7 +42,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: plan.handler
-      CodeUri: ./
+      # dist/ is produced by `npm run bundle` (esbuild); nothing else ships to Lambda
+      CodeUri: dist/
       LoggingConfig:
         LogGroup: !Ref PlanLogs
       Environment:
@@ -52,8 +53,11 @@ Resources:
       Policies:
         - Statement:
             - Effect: Allow
-              Action: bedrock-mantle:CreateInference
-              Resource: '*'
+              Action:
+                - bedrock:InvokeModel
+              Resource:
+                - !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/*
+                - !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/*
       Events:
         Plan:
           Type: HttpApi
@@ -61,20 +65,6 @@ Resources:
             ApiId: !Ref PlanApi
             Path: /plan
             Method: POST
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Format: esm
-        Target: es2022
-        Platform: node
-        Minify: true
-        Sourcemap: false
-        EntryPoints:
-          - src/plan.ts
-        OutExtension:
-          - .js=.mjs
-        Banner:
-          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   PlanLogs:
     Type: AWS::Logs::LogGroup
