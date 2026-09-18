@@ -1,4 +1,4 @@
-import type { ToolMeta } from '../types'
+import { PDF_ACCEPT, type ToolMeta } from '../types'
 
 export const meta: ToolMeta = {
   slug: 'pdf-split',
@@ -6,6 +6,7 @@ export const meta: ToolMeta = {
   title: 'Split',
   summary: 'By ranges, every N pages, or pull out pages.',
   category: 'pdf',
-  accept: ['application/pdf'],
+  group: 'Pages',
+  accept: PDF_ACCEPT,
   multiple: false,
 }

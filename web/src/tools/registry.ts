@@ -1,5 +1,5 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react'
-import type { ToolMeta } from './types'
+import type { ToolGroup, ToolMeta } from './types'
 
 export interface Tool extends ToolMeta {
   Component: LazyExoticComponent<ComponentType>
@@ -24,3 +24,10 @@ export const categoryLabel: Record<ToolMeta['category'], string> = {
   image: 'Image',
   pdf: 'PDF',
 }
+
+/** Tools by section, in the order the index shows them. */
+export const toolGroups: { group: ToolGroup; tools: Tool[] }[] = (
+  ['Image', 'Pages', 'Stamps', 'Convert', 'Inspect', 'Secure'] as ToolGroup[]
+)
+  .map((group) => ({ group, tools: tools.filter((t) => t.group === group) }))
+  .filter((section) => section.tools.length > 0)

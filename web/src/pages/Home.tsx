@@ -16,7 +16,7 @@ import { formatBytes } from '@/lib/format'
 import { describeStep } from '@/lib/plan/describe'
 import type { StepProgress } from '@/lib/plan/execute'
 import { cn } from '@/lib/utils'
-import { tools } from '@/tools/registry'
+import { toolGroups, tools } from '@/tools/registry'
 
 type Planner = ReturnType<typeof usePlanner>
 
@@ -397,21 +397,33 @@ function ToolIndexPanel() {
       className="scroll-mt-6 [grid-area:f]"
       meta={<span className="text-primary">All {tools.length}</span>}
     >
-      <div className="mt-3.5 grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-px border border-line-soft bg-line-soft">
-        {tools.map((t) => (
-          <Link
-            key={t.slug}
-            to={`/tools/${t.slug}`}
-            className="group bg-well px-4 py-[15px] transition-colors hover:bg-accent"
-          >
-            <div className="text-[9.5px] leading-none tracking-[0.14em] text-primary">{t.code}</div>
-            <div className="mt-[9px] font-sans text-[13.5px] leading-tight font-medium text-foreground">
-              {t.title}
+      <div className="mt-3.5 flex flex-col gap-3.5">
+        {toolGroups.map((section) => (
+          <div key={section.group}>
+            <div className="mb-2 flex items-center gap-3">
+              <span className="label text-faint">{section.group}</span>
+              <span className="h-px flex-1 bg-line-soft" />
             </div>
-            <div className="mt-[5px] font-sans text-[11.5px] leading-normal text-faint group-hover:text-soft">
-              {t.summary}
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-px border border-line-soft bg-line-soft">
+              {section.tools.map((t) => (
+                <Link
+                  key={t.slug}
+                  to={`/tools/${t.slug}`}
+                  className="group bg-well px-4 py-[15px] transition-colors hover:bg-accent"
+                >
+                  <div className="text-[9.5px] leading-none tracking-[0.14em] text-primary">
+                    {t.code}
+                  </div>
+                  <div className="mt-[9px] font-sans text-[13.5px] leading-tight font-medium text-foreground">
+                    {t.title}
+                  </div>
+                  <div className="mt-[5px] font-sans text-[11.5px] leading-normal text-faint group-hover:text-soft">
+                    {t.summary}
+                  </div>
+                </Link>
+              ))}
             </div>
-          </Link>
+          </div>
         ))}
       </div>
     </Panel>

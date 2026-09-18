@@ -1,4 +1,4 @@
-import type { ToolMeta } from '../types'
+import { IMAGE_ACCEPT, type ToolMeta } from '../types'
 
 export const meta: ToolMeta = {
   slug: 'image-convert',
@@ -6,6 +6,7 @@ export const meta: ToolMeta = {
   title: 'Convert',
   summary: 'Switch between JPG, PNG and WebP.',
   category: 'image',
-  accept: ['image/jpeg', 'image/png', 'image/webp', 'image/bmp', 'image/avif', 'image/gif'],
+  group: 'Image',
+  accept: IMAGE_ACCEPT,
   multiple: true,
 }

@@ -1,4 +1,4 @@
-import type { ToolMeta } from '../types'
+import { PDF_ACCEPT, type ToolMeta } from '../types'
 
 export const meta: ToolMeta = {
   slug: 'pdf-merge',
@@ -6,6 +6,7 @@ export const meta: ToolMeta = {
   title: 'Merge',
   summary: 'Drag to reorder before joining.',
   category: 'pdf',
-  accept: ['application/pdf'],
+  group: 'Pages',
+  accept: PDF_ACCEPT,
   multiple: true,
 }

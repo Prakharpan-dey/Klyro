@@ -1,4 +1,4 @@
-import type { ToolMeta } from '../types'
+import { PDF_ACCEPT, type ToolMeta } from '../types'
 
 export const meta: ToolMeta = {
   slug: 'pdf-to-images',
@@ -6,6 +6,7 @@ export const meta: ToolMeta = {
   title: 'PDF → Images',
   summary: 'Every page as a JPG or PNG.',
   category: 'pdf',
-  accept: ['application/pdf'],
+  group: 'Convert',
+  accept: PDF_ACCEPT,
   multiple: true,
 }
