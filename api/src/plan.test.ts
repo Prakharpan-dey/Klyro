@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { planWithMock } from './mock'
 import { handler } from './plan'
 import { validatePlan } from './planner'
-import { userMessage } from './prompt'
+import { SUBMIT_PLAN_TOOL, userMessage } from './prompt'
 import { checkRefs, planRequestSchema, type PlanRequest } from './schema'
 
 const pdfs: PlanRequest['files'] = [
@@ -35,6 +35,14 @@ describe('request validation', () => {
 })
 
 describe('plan validation', () => {
+  it('accepts a plan whose clarification field is missing', () => {
+    const plan = validatePlan(
+      { summary: 'Merge', steps: [{ op: 'pdf.merge', inputs: ['file:0'], params: {} }] },
+      1,
+    )
+    expect(plan.clarification).toBeNull()
+  })
+
   it('accepts a chained plan', () => {
     const plan = validatePlan(
       {
@@ -89,6 +97,23 @@ describe('prompt', () => {
     expect(userMessage({ instruction: 'merge', files: [{ ...pdfs[0], name: 'a.pdf' }] })).toContain(
       'name "a.pdf"',
     )
+  })
+})
+
+describe('tool spec', () => {
+  it('describes the plan shape for the Converse API', () => {
+    const schema = SUBMIT_PLAN_TOOL.inputSchema?.json as Record<string, any>
+    expect(SUBMIT_PLAN_TOOL.name).toBe('submit_plan')
+    expect(schema.required).toEqual(['summary', 'clarification', 'steps'])
+    const pattern = new RegExp(schema.properties.steps.items.properties.inputs.items.pattern)
+    expect(pattern.test('file:0')).toBe(true)
+    expect(pattern.test('step:12')).toBe(true)
+    expect(pattern.test('filed')).toBe(false)
+  })
+
+  it('offers every op the executor implements', () => {
+    const schema = SUBMIT_PLAN_TOOL.inputSchema?.json as Record<string, any>
+    expect(schema.properties.steps.items.properties.op.enum).toContain('pdf.merge')
   })
 })
 
