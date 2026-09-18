@@ -1,4 +1,4 @@
-import type { Tool } from '@anthropic-ai/sdk/resources/messages'
+import type { ToolSpecification } from '@aws-sdk/client-bedrock-runtime'
 import { OPS, LIMITS, type PlanRequest } from './schema'
 
 export const SYSTEM_PROMPT = `You plan file operations for Klyro, a browser app that edits images and PDFs on the user's own device.
@@ -66,35 +66,37 @@ const param = {
   name: { type: 'string', description: 'Output file name without extension' },
 }
 
-export const SUBMIT_PLAN_TOOL: Tool = {
+export const SUBMIT_PLAN_TOOL: ToolSpecification = {
   name: 'submit_plan',
   description:
     'Submit the file-operation plan. Call exactly once. Use an empty steps array with a clarification when the job cannot or should not be planned.',
-  input_schema: {
-    type: 'object',
-    additionalProperties: false,
-    required: ['summary', 'clarification', 'steps'],
-    properties: {
-      summary: { type: 'string', description: 'One sentence describing the result' },
-      clarification: {
-        type: ['string', 'null'],
-        description: 'Question or explanation for the user, or null when the plan is complete',
-      },
-      steps: {
-        type: 'array',
-        maxItems: LIMITS.steps,
-        items: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['op', 'inputs', 'params'],
-          properties: {
-            op: { type: 'string', enum: [...OPS] },
-            inputs: {
-              type: 'array',
-              items: { type: 'string', pattern: '^(file|step):\\d+$' },
-              minItems: 1,
+  inputSchema: {
+    json: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['summary', 'clarification', 'steps'],
+      properties: {
+        summary: { type: 'string', description: 'One sentence describing the result' },
+        clarification: {
+          type: ['string', 'null'],
+          description: 'Question or explanation for the user, or null when the plan is complete',
+        },
+        steps: {
+          type: 'array',
+          maxItems: LIMITS.steps,
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['op', 'inputs', 'params'],
+            properties: {
+              op: { type: 'string', enum: [...OPS] },
+              inputs: {
+                type: 'array',
+                items: { type: 'string', pattern: '^(file|step):\\d+$' },
+                minItems: 1,
+              },
+              params: { type: 'object', additionalProperties: false, properties: param },
             },
-            params: { type: 'object', additionalProperties: false, properties: param },
           },
         },
       },
