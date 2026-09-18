@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { poolStore } from '@/ops/image/pool'
+import { plannerUrl } from './planner'
 
 function useOnline() {
   return useSyncExternalStore(
@@ -41,8 +42,6 @@ function useOffOriginRequests() {
 
   return count
 }
-
-export const plannerUrl = import.meta.env.VITE_API_URL as string | undefined
 
 export function useTelemetry() {
   const pool = useSyncExternalStore(poolStore.subscribe, poolStore.getSnapshot)
