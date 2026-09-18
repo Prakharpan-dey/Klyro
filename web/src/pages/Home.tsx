@@ -168,7 +168,7 @@ function IntakePanel({ locked }: { locked: boolean }) {
 
 function PlanPanel({ planner, onEdit }: { planner: Planner; onEdit: () => void }) {
   const { files } = useWorkspace()
-  const { phase, plan, bytesSent, error } = planner
+  const { phase, plan, bytesSent, mode, error } = planner
   const names = planner.files.map((f) => f.name)
 
   // the plan refers to files by position, so any change to the staged list makes it stale
@@ -181,7 +181,9 @@ function PlanPanel({ planner, onEdit }: { planner: Planner; onEdit: () => void }
     phase === 'planning' ? (
       <span className="text-egress">● /plan · sending</span>
     ) : bytesSent ? (
-      <span className="text-egress">● /plan · {bytesSent} B sent</span>
+      <span className="text-egress">
+        ● /plan · {bytesSent} B sent{mode === 'rules' ? ' · rules' : ''}
+      </span>
     ) : (
       <span className="text-dim">/plan · idle</span>
     )
@@ -242,6 +244,11 @@ function PlanPanel({ planner, onEdit }: { planner: Planner; onEdit: () => void }
             <div className="mt-3 border border-egress/40 bg-egress/5 px-3 py-3 font-sans text-[12.5px] leading-relaxed text-egress">
               {plan.clarification}
             </div>
+          )}
+          {mode === 'rules' && (
+            <p className="mt-3 readout text-[10px] text-egress">
+              Planned by the API&apos;s keyword rules · the model is unavailable on this account
+            </p>
           )}
           {stale && (
             <p className="mt-3 readout text-[10px] text-egress">

@@ -27,9 +27,13 @@ export function buildPlanRequest(
   }
 }
 
+export type PlannerMode = 'model' | 'rules'
+
 export interface PlanResponse {
   plan: Plan
   bytesSent: number
+  /** 'rules' means the API answered with its keyword fallback, not a model */
+  mode: PlannerMode
 }
 
 export async function requestPlan(req: PlanRequest, signal?: AbortSignal): Promise<PlanResponse> {
@@ -59,5 +63,9 @@ export async function requestPlan(req: PlanRequest, signal?: AbortSignal): Promi
   const refError = checkRefs(parsed.data, req.files.length)
   if (refError) throw new Error(refError)
 
-  return { plan: parsed.data, bytesSent: new TextEncoder().encode(body).length }
+  return {
+    plan: parsed.data,
+    bytesSent: new TextEncoder().encode(body).length,
+    mode: data.mode === 'rules' ? 'rules' : 'model',
+  }
 }

@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { buildPlanRequest, requestPlan, type StagedForPlan } from '@/lib/plan/api'
+import { buildPlanRequest, requestPlan, type PlannerMode, type StagedForPlan } from '@/lib/plan/api'
 import { checkPlan, executePlan, type StepProgress } from '@/lib/plan/execute'
 import { runStep } from '@/lib/plan/runners'
 import type { Plan } from '@/lib/plan/schema'
@@ -14,6 +14,7 @@ export interface PlannerState {
   /** files the plan was made for, in index order */
   files: File[]
   bytesSent?: number
+  mode?: PlannerMode
   steps: StepProgress[]
   results: OutputFile[]
   error?: string
@@ -36,7 +37,7 @@ export function usePlanner() {
 
       try {
         const req = buildPlanRequest(instruction, staged, shareNames)
-        const { plan, bytesSent } = await requestPlan(req, controller.signal)
+        const { plan, bytesSent, mode } = await requestPlan(req, controller.signal)
         const problem = checkPlan(
           plan,
           req.files.map((f) => f.kind),
@@ -45,6 +46,7 @@ export function usePlanner() {
           ...initial,
           files,
           bytesSent,
+          mode,
           plan: problem ? { ...plan, steps: [], clarification: problem } : plan,
           phase: 'planned',
         })
