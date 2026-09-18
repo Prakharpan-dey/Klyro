@@ -22,18 +22,54 @@ export async function extractPageText(doc: PDFDocumentProxy, index: number): Pro
   for (const item of content.items as TextItemish[]) {
     if (typeof item.str !== 'string') continue
     const y = item.transform?.[5] ?? null
-    if (lastY !== null && y !== null && Math.abs(y - lastY) > 2) {
-      text += '\n'
+    // transform[3] carries the vertical scale, which for ordinary text is the font size
+    const size = Math.abs(item.transform?.[3] ?? 0) || 12
+    const jump = lastY !== null && y !== null ? Math.abs(y - lastY) : 0
+
+    if (jump > size * 2) {
+      // a gap of more than two lines reads as a new paragraph
+      if (!text.endsWith('\n\n')) text += text.endsWith('\n') ? '\n' : '\n\n'
+    } else if (jump > 2) {
+      if (!text.endsWith('\n')) text += '\n'
     } else if (text && !text.endsWith(' ') && !text.endsWith('\n') && item.str) {
       text += ' '
     }
+
     text += item.str
-    if (item.hasEOL) text += '\n'
+    if (item.hasEOL && !text.endsWith('\n')) text += '\n'
     lastY = y
   }
 
   page.cleanup()
   return text.replace(/[ \t]+\n/g, '\n').trim()
+}
+
+export interface TextPiece {
+  str: string
+  /** left edge and baseline, in PDF points from the bottom-left corner */
+  x: number
+  y: number
+  width: number
+}
+
+/** Positioned text runs of one page, for callers that need the layout back. */
+export async function extractPageItems(doc: PDFDocumentProxy, index: number): Promise<TextPiece[]> {
+  const page = await doc.getPage(index + 1)
+  const content = await page.getTextContent()
+  const pieces: TextPiece[] = []
+
+  for (const item of content.items as (TextItemish & { width?: number })[]) {
+    if (typeof item.str !== 'string' || !item.str.trim()) continue
+    pieces.push({
+      str: item.str,
+      x: item.transform?.[4] ?? 0,
+      y: item.transform?.[5] ?? 0,
+      width: item.width ?? 0,
+    })
+  }
+
+  page.cleanup()
+  return pieces
 }
 
 export async function extractText(file: File, onProgress?: Progress): Promise<string[]> {
