@@ -7,19 +7,20 @@
     "test": "vitest run",
     "lint": "oxlint src scripts",
     "format": "prettier --write .",
-    "build": "sam build",
-    "deploy": "sam deploy --guided"
+    "build": "npm run bundle && sam build",
+    "deploy": "sam deploy --guided",
+    "bundle": "esbuild src/plan.ts --bundle --platform=node --format=esm --target=es2022 --minify --outfile=dist/plan.mjs --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\""
   },
   "type": "module",
   "private": true,
   "dependencies": {
-    "@anthropic-ai/bedrock-sdk": "^0.33.6",
+    "@aws-sdk/client-bedrock-runtime": "^3.1135.0",
+    "esbuild": "0.28.2",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.163",
     "@types/node": "^24.13.5",
-    "esbuild": "^0.28.2",
     "oxlint": "^1.83.0",
     "prettier": "^3.9.7",
     "tsx": "^4.23.13",
