@@ -5,8 +5,8 @@ Description: Klyro planner API. Turns an instruction plus file metadata into a p
 Parameters:
   ModelId:
     Type: String
-    Default: openai.gpt-oss-120b-1:0
-    Description: Bedrock model ID used by the planner (must support the Converse API and tool use)
+    Default: openai.gpt-oss-120b
+    Description: Model ID on the Bedrock Mantle endpoint (must support tool calls)
   AllowedOrigins:
     Type: CommaDelimitedList
     Default: http://localhost:5173
@@ -53,10 +53,8 @@ Resources:
         - Statement:
             - Effect: Allow
               Action:
-                - bedrock:InvokeModel
-              Resource:
-                - !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/*
-                - !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/*
+                - bedrock-mantle:CreateInference
+              Resource: '*'
       Events:
         Plan:
           Type: HttpApi

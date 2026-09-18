@@ -1,4 +1,4 @@
-import type { ToolSpecification } from '@aws-sdk/client-bedrock-runtime'
+import type { ChatTool } from './bedrock'
 import { OPS, LIMITS, type PlanRequest } from './schema'
 
 export const SYSTEM_PROMPT = `You plan file operations for Klyro, a browser app that edits images and PDFs on the user's own device.
@@ -66,12 +66,13 @@ const param = {
   name: { type: 'string', description: 'Output file name without extension' },
 }
 
-export const SUBMIT_PLAN_TOOL: ToolSpecification = {
-  name: 'submit_plan',
-  description:
-    'Submit the file-operation plan. Call exactly once. Use an empty steps array with a clarification when the job cannot or should not be planned.',
-  inputSchema: {
-    json: {
+export const SUBMIT_PLAN_TOOL: ChatTool = {
+  type: 'function',
+  function: {
+    name: 'submit_plan',
+    description:
+      'Submit the file-operation plan. Call exactly once. Use an empty steps array with a clarification when the job cannot or should not be planned.',
+    parameters: {
       type: 'object',
       additionalProperties: false,
       required: ['summary', 'clarification', 'steps'],

@@ -1,8 +1,4 @@
-import {
-  BedrockRuntimeClient,
-  ConverseCommand,
-  type ContentBlock,
-} from '@aws-sdk/client-bedrock-runtime'
+import { BedrockHttpError, chatCompletion } from './bedrock'
 import { SUBMIT_PLAN_TOOL, SYSTEM_PROMPT, userMessage } from './prompt'
 import { checkRefs, planSchema, type Plan, type PlanRequest } from './schema'
 
@@ -20,14 +16,6 @@ export interface PlanResult {
   usage?: { inputTokens: number; outputTokens: number }
 }
 
-let client: BedrockRuntimeClient | null = null
-
-function getClient() {
-  // region and credentials come from the Lambda environment
-  client ??= new BedrockRuntimeClient({ maxAttempts: 2 })
-  return client
-}
-
 export function validatePlan(input: unknown, fileCount: number): Plan {
   const parsed = planSchema.safeParse(input)
   if (!parsed.success) throw new PlannerError('The planner returned an invalid plan', 502)
@@ -36,53 +24,57 @@ export function validatePlan(input: unknown, fileCount: number): Plan {
   return parsed.data
 }
 
-function findToolUse(content: ContentBlock[] | undefined) {
-  for (const block of content ?? []) {
-    if (block.toolUse?.name === SUBMIT_PLAN_TOOL.name) return block.toolUse
-  }
-  return undefined
-}
-
 export async function planWithBedrock(req: PlanRequest): Promise<PlanResult> {
-  const modelId = process.env.MODEL_ID || 'openai.gpt-oss-120b-1:0'
+  const model = process.env.MODEL_ID || 'openai.gpt-oss-120b'
 
   let response
   try {
-    response = await getClient().send(
-      new ConverseCommand({
-        modelId,
-        system: [{ text: SYSTEM_PROMPT }],
-        messages: [{ role: 'user', content: [{ text: userMessage(req) }] }],
-        inferenceConfig: { maxTokens: 2000, temperature: 0 },
-        toolConfig: { tools: [{ toolSpec: SUBMIT_PLAN_TOOL }] },
-      }),
-    )
+    response = await chatCompletion({
+      model,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userMessage(req) },
+      ],
+      tools: [SUBMIT_PLAN_TOOL],
+      // open models spend tokens on reasoning before the tool call, so leave room
+      max_completion_tokens: 4000,
+      temperature: 0,
+    })
   } catch (err) {
-    const name = err instanceof Error ? err.name : ''
-    if (name === 'AccessDeniedException' || name === 'ValidationException') {
-      throw new PlannerError('The planner model is not available on this account', 503)
+    if (err instanceof BedrockHttpError) {
+      if (err.status === 403 || err.status === 404) {
+        throw new PlannerError('The planner model is not available on this account', 503)
+      }
+      if (err.status === 429) throw new PlannerError('Planner is busy, try again', 429)
+      throw new PlannerError('Planner is unavailable right now', 503)
     }
-    if (name === 'ThrottlingException') throw new PlannerError('Planner is busy, try again', 429)
+    if (err instanceof Error && err.name === 'TimeoutError') {
+      throw new PlannerError('The planner took too long. Try a shorter instruction.', 504)
+    }
     throw err
   }
 
-  if (
-    response.stopReason === 'guardrail_intervened' ||
-    response.stopReason === 'content_filtered'
-  ) {
-    throw new PlannerError('That request cannot be planned', 422)
+  const choice = response.choices?.[0]
+  const call = choice?.message?.tool_calls?.find(
+    (c) => c.function.name === SUBMIT_PLAN_TOOL.function.name,
+  )
+  if (!call) {
+    const reason = choice?.finish_reason === 'length' ? ' It ran out of room.' : ''
+    throw new PlannerError(`The planner did not return a plan. Try rephrasing.${reason}`, 502)
   }
 
-  const call = findToolUse(response.output?.message?.content)
-  if (!call) {
-    throw new PlannerError('The planner did not return a plan. Try rephrasing.', 502)
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(call.function.arguments)
+  } catch {
+    throw new PlannerError('The planner returned an invalid plan', 502)
   }
 
   return {
-    plan: validatePlan(call.input, req.files.length),
+    plan: validatePlan(parsed, req.files.length),
     usage: {
-      inputTokens: response.usage?.inputTokens ?? 0,
-      outputTokens: response.usage?.outputTokens ?? 0,
+      inputTokens: response.usage?.prompt_tokens ?? 0,
+      outputTokens: response.usage?.completion_tokens ?? 0,
     },
   }
 }
