@@ -46,7 +46,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
         ...('usage' in result ? result.usage : {}),
       }),
     )
-    return json(200, { plan: result.plan })
+    return json(200, { plan: result.plan, mode: mock ? 'rules' : 'model' })
   } catch (err) {
     if (err instanceof PlannerError) {
       console.log(

@@ -1,8 +1,17 @@
 import type { Plan, PlanRequest, PlanStep } from './schema'
 
+const OP_WORDS: Partial<Record<PlanStep['op'], string>> = {
+  'pdf.merge': 'merge the PDFs',
+  'pdf.deletePages': 'delete the listed pages',
+  'pdf.rotate': 'rotate the pages',
+  'pdf.fromImages': 'put the images into a PDF',
+  'image.compress': 'compress the images',
+  'image.convert': 'convert the images',
+}
+
 /**
- * Keyword planner for local development without AWS credentials (MOCK_PLANNER=1).
- * It only understands a handful of phrasings; the real planner runs on Bedrock.
+ * Keyword planner used when the model is unavailable (MOCK_PLANNER=1) and for local
+ * development without AWS credentials. It understands a handful of phrasings only.
  */
 export function planWithMock(req: PlanRequest): Plan {
   const text = req.instruction.toLowerCase()
@@ -47,12 +56,14 @@ export function planWithMock(req: PlanRequest): Plan {
 
   if (!steps.length) {
     return {
-      summary: 'Could not match that request.',
+      summary: '',
       clarification:
-        'The local mock planner only understands simple requests like "merge and remove page 2" or "compress to 200 KB".',
+        'I could not match that request. Try wording like "merge and remove page 2", "compress to 200 KB" or "convert to webp".',
       steps,
     }
   }
 
-  return { summary: `Mock plan with ${steps.length} step(s).`, clarification: null, steps }
+  const words = steps.map((s) => OP_WORDS[s.op] ?? s.op)
+  const summary = `${words.join(', then ')}.`
+  return { summary: summary.charAt(0).toUpperCase() + summary.slice(1), clarification: null, steps }
 }
