@@ -74,7 +74,12 @@ export const planStepSchema = z.object({
 
 export const planSchema = z.object({
   summary: z.string().max(300),
-  clarification: z.string().max(300).nullable(),
+  // some models omit the field instead of sending null
+  clarification: z
+    .string()
+    .max(300)
+    .nullish()
+    .transform((v) => v ?? null),
   steps: z.array(planStepSchema).max(LIMITS.steps),
 })
 
