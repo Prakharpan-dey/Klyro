@@ -1,13 +1,16 @@
 import type { FileMeta } from '@/lib/fileMeta'
 import { plannerUrl } from '@/features/telemetry/planner'
-import { checkRefs, planSchema, type Plan, type PlanRequest } from './schema'
+import { checkParams, checkRefs, planSchema, type Plan, type PlanRequest } from './schema'
 
 export interface StagedForPlan {
   file: File
   meta?: FileMeta
 }
 
-/** Only what the planner needs: kind, type, size, pages or pixel size. Never file contents. */
+/**
+ * Only what the planner needs to choose operations: kind, type, size, and whichever of page
+ * count, pixel size or duration applies. Never file contents.
+ */
 export function buildPlanRequest(
   instruction: string,
   staged: StagedForPlan[],
@@ -17,13 +20,14 @@ export function buildPlanRequest(
     instruction: instruction.trim(),
     files: staged.map(({ file, meta }, index) => ({
       index,
-      // the planner has no video operations, so a clip is simply a file it
-      // cannot act on; it is never told more than that
-      kind: meta?.kind === 'video' ? 'other' : (meta?.kind ?? 'other'),
+      kind: meta?.kind ?? 'other',
       mime: file.type || 'application/octet-stream',
       sizeKB: Math.round(file.size / 1024),
       ...(meta?.pages ? { pages: meta.pages } : {}),
       ...(meta?.width && meta.height ? { width: meta.width, height: meta.height } : {}),
+      // a target size cannot be turned into a bitrate without knowing how long the clip runs
+      ...(meta?.durationSec ? { durationSec: Math.round(meta.durationSec) } : {}),
+      ...(meta?.kind === 'video' ? { hasAudio: meta.hasAudio ?? false } : {}),
       ...(shareNames ? { name: file.name.slice(0, 200) } : {}),
     })),
   }
@@ -72,8 +76,8 @@ export async function requestPlan(req: PlanRequest, signal?: AbortSignal): Promi
 
   const parsed = planSchema.safeParse(data.plan)
   if (!parsed.success) throw new Error('The planner sent back something unexpected')
-  const refError = checkRefs(parsed.data, req.files.length)
-  if (refError) throw new Error(refError)
+  const error = checkRefs(parsed.data, req.files.length) ?? checkParams(parsed.data)
+  if (error) throw new Error(error)
 
   return {
     plan: parsed.data,

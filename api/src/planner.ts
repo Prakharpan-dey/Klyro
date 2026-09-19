@@ -1,6 +1,6 @@
 import { BedrockHttpError, chatCompletion } from './bedrock'
 import { SUBMIT_PLAN_TOOL, SYSTEM_PROMPT, userMessage } from './prompt'
-import { checkRefs, planSchema, type Plan, type PlanRequest } from './schema'
+import { checkParams, checkRefs, planSchema, type Plan, type PlanRequest } from './schema'
 
 export class PlannerError extends Error {
   constructor(
@@ -19,8 +19,8 @@ export interface PlanResult {
 export function validatePlan(input: unknown, fileCount: number): Plan {
   const parsed = planSchema.safeParse(input)
   if (!parsed.success) throw new PlannerError('The planner returned an invalid plan', 502)
-  const refError = checkRefs(parsed.data, fileCount)
-  if (refError) throw new PlannerError(`The planner returned an invalid plan: ${refError}`, 502)
+  const error = checkRefs(parsed.data, fileCount) ?? checkParams(parsed.data)
+  if (error) throw new PlannerError(`The planner returned an invalid plan: ${error}`, 502)
   return parsed.data
 }
 
