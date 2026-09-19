@@ -80,6 +80,18 @@ export function isLossy(format: ImageFormat): boolean {
   return format !== 'image/png'
 }
 
+/**
+ * How much to shrink after an encode overshot the target.
+ *
+ * File size follows pixel count, so the square root of how far off we are
+ * lands close to the target in one step. Clamped so a wild miss cannot erase
+ * the picture in a single jump, and so a near miss still makes progress.
+ */
+export function nextScale(actualBytes: number, maxBytes: number): number {
+  if (!(actualBytes > 0) || !(maxBytes > 0)) return 0.85
+  return Math.min(0.9, Math.max(0.35, Math.sqrt(maxBytes / actualBytes)))
+}
+
 export interface QualitySearchResult {
   blob: Blob
   quality: number

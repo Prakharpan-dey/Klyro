@@ -1,11 +1,15 @@
 import {
   extensionFor,
   isLossy,
+  nextScale,
   resolveSize,
   searchQuality,
   type ImageFormat,
   type ResizeSpec,
 } from '@/lib/imageMath'
+
+/** Below this the picture is no longer worth the bytes it saves. */
+const MIN_SIDE = 48
 
 export interface TransformParams {
   /** 'keep' re-encodes in the source format (unsupported sources fall back to JPEG). */
@@ -93,7 +97,7 @@ export async function transformImage(
 
     // Target size: lower quality first, then shrink dimensions if that is not enough.
     let last: TransformResult | null = null
-    for (let attempt = 0; attempt < 10; attempt++) {
+    for (let attempt = 0; attempt < 12; attempt++) {
       const canvas = draw(bitmap, width, height, format)
       if (isLossy(format)) {
         // AVIF encodes several times slower than JPEG, so it gets a shorter search
@@ -104,9 +108,14 @@ export async function transformImage(
         const blob = await toBlob(canvas, format)
         last = { blob, width, height, fits: blob.size <= params.maxBytes }
       }
-      if (last.fits || width <= 64 || height <= 64) break
-      width = Math.round(width * 0.85)
-      height = Math.round(height * 0.85)
+      if (last.fits || width <= MIN_SIDE || height <= MIN_SIDE) break
+
+      // aim straight at the target rather than creeping down a fixed step: a
+      // PNG of a photo needs a much smaller picture, and ten 15% steps never
+      // got there, so it arrived both smaller and bigger than where it started
+      const scale = nextScale(last.blob.size, params.maxBytes)
+      width = Math.max(MIN_SIDE, Math.round(width * scale))
+      height = Math.max(MIN_SIDE, Math.round(height * scale))
     }
     return last!
   } finally {
