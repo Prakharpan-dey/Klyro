@@ -58,7 +58,17 @@ export async function requestPlan(req: PlanRequest, signal?: AbortSignal): Promi
   }
 
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error ?? `Planner error (${res.status})`)
+  if (!res.ok) {
+    // the planner runs at a deliberately small concurrency, so a busy moment is
+    // an ordinary outcome rather than a fault worth alarming anyone about
+    if (res.status === 429) {
+      throw new Error('The planner is busy. Try again in a moment — every tool works without it.')
+    }
+    if (res.status >= 500) {
+      throw new Error(data.error ?? 'The planner could not answer. Every tool works without it.')
+    }
+    throw new Error(data.error ?? `Planner error (${res.status})`)
+  }
 
   const parsed = planSchema.safeParse(data.plan)
   if (!parsed.success) throw new Error('The planner sent back something unexpected')
