@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { Dropzone } from '@/components/console/Dropzone'
 import { describeMeta } from '@/components/console/describeMeta'
@@ -6,7 +6,7 @@ import { FileRow } from '@/components/console/FileRow'
 import { Panel, ReadoutRow } from '@/components/console/Panel'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { formatBytes } from '@/lib/format'
+import { formatBytes, formatDuration } from '@/lib/format'
 import type { useFileJob } from '@/lib/useFileJob'
 import type { ToolMeta } from '@/tools/types'
 import { ResultList } from './ResultList'
@@ -29,6 +29,8 @@ interface ToolLayoutProps {
   /** full-width panel between settings and output, e.g. a page grid */
   workbench?: ReactNode
   compareSizes?: boolean
+  /** show a stop button; only long jobs pass an abort signal through */
+  cancellable?: boolean
 }
 
 export function ToolLayout({
@@ -44,10 +46,24 @@ export function ToolLayout({
   intakeHint,
   workbench,
   compareSizes = true,
+  cancellable = false,
 }: ToolLayoutProps) {
   const running = job.status === 'running'
-  const pct = job.total ? Math.round((job.done / job.total) * 100) : 0
+  const pct = job.total ? Math.min(100, Math.round((job.done / job.total) * 100)) : 0
   const totalSize = files.list.reduce((n, f) => n + f.size, 0)
+
+  // one long file reads better as a percentage than as "0 / 1"
+  const single = job.total === 1
+  const [now, setNow] = useState(0)
+
+  useEffect(() => {
+    if (!running) return
+    const tick = setInterval(() => setNow(performance.now()), 1000)
+    return () => clearInterval(tick)
+  }, [running])
+
+  const elapsed = job.startedAt && now ? now - job.startedAt : 0
+  const remaining = single && job.done > 0.03 ? (elapsed * (1 - job.done)) / job.done : 0
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -151,6 +167,8 @@ export function ToolLayout({
             <span className="text-primary">Running</span>
           ) : job.status === 'error' ? (
             <span className="text-destructive">Error</span>
+          ) : job.status === 'cancelled' ? (
+            <span className="text-egress">Stopped</span>
           ) : (
             <span className="text-dim">Idle</span>
           )
@@ -158,14 +176,31 @@ export function ToolLayout({
       >
         {running && (
           <div className="mt-4">
-            <div className="text-[26px] leading-none font-medium">
-              {job.done} / {job.total}
+            <div className="flex items-baseline justify-between gap-3">
+              <div className="text-[26px] leading-none font-medium">
+                {single ? `${pct}%` : `${Math.floor(job.done)} / ${job.total}`}
+              </div>
+              {cancellable && (
+                <Button
+                  variant="outline"
+                  onClick={job.cancel}
+                  className="h-auto px-3 py-1.5 text-[10.5px] tracking-[0.12em]"
+                >
+                  STOP
+                </Button>
+              )}
             </div>
             <Progress value={pct} className="mt-3 h-1.5 bg-line-soft" />
             <div className="mt-3 readout text-faint">
               <ReadoutRow label="Current" value={job.label} className="truncate normal-case" />
+              {remaining > 2000 && (
+                <ReadoutRow label="Left" value={`about ${formatDuration(remaining / 1000)}`} />
+              )}
             </div>
           </div>
+        )}
+        {job.status === 'cancelled' && (
+          <p className="mt-3 font-sans text-[12.5px] text-soft">Stopped. Nothing was saved.</p>
         )}
         {job.status === 'error' && <p className="mt-3 text-sm text-destructive">{job.error}</p>}
         {job.status === 'idle' && (
