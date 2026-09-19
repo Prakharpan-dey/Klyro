@@ -1,4 +1,5 @@
 import { useTelemetry } from '@/features/telemetry/useTelemetry'
+import { REPO_URL, SUPPORT_URL } from '@/lib/links'
 import { cn } from '@/lib/utils'
 
 export function StatusBar() {
@@ -10,6 +11,27 @@ export function StatusBar() {
         <span>Egress · 0 B file data · all processing local</span>
       </div>
       <div className="flex items-center gap-4 text-dim">
+        {/* links, not requests: nothing is fetched until someone clicks */}
+        {REPO_URL && (
+          <a
+            href={REPO_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="text-dim hover:text-foreground"
+          >
+            Source
+          </a>
+        )}
+        {SUPPORT_URL && (
+          <a
+            href={SUPPORT_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="text-dim hover:text-foreground"
+          >
+            Buy me a coffee
+          </a>
+        )}
         <span className={cn(offOrigin > 0 && 'text-egress')}>Off-origin requests {offOrigin}</span>
         <span className={online ? 'text-dim' : 'text-egress'}>{online ? 'Online' : 'Offline'}</span>
       </div>
