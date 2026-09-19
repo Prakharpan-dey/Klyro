@@ -293,4 +293,4 @@ Every one of these is compatible with the AGPL: the permissive ones by definitio
 
 The point is narrow: Klyro's promise is that your files never leave your machine, and that promise is only as good as the source you can read. Anyone is free to take this further — they just cannot take it private.
 
-The hosted copy satisfies section 13 with the **Source** link in its status bar, on every page. If you deploy your own modified build, point that link at your fork: it is one line in [`web/src/lib/links.ts`](web/src/lib/links.ts).
+In practice, that means a fork you deploy has to tell its users where to get its source. The unmodified upstream is this repository, which is public.

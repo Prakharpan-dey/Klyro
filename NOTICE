@@ -15,8 +15,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 
 Because Klyro is normally used over a network, section 13 applies: anyone who
 runs a modified version and lets others use it must offer those users the
-corresponding source. The deployed site does this with the "Source" link in its
-status bar, which points at the repository this copy came from.
+corresponding source of that modified version.
 
 --- Third-party components ---
 
