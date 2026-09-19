@@ -17,7 +17,9 @@ export function buildPlanRequest(
     instruction: instruction.trim(),
     files: staged.map(({ file, meta }, index) => ({
       index,
-      kind: meta?.kind ?? 'other',
+      // the planner has no video operations, so a clip is simply a file it
+      // cannot act on; it is never told more than that
+      kind: meta?.kind === 'video' ? 'other' : (meta?.kind ?? 'other'),
       mime: file.type || 'application/octet-stream',
       sizeKB: Math.round(file.size / 1024),
       ...(meta?.pages ? { pages: meta.pages } : {}),

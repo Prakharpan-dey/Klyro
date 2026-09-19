@@ -16,3 +16,12 @@ export function formatSaving(before: number, after: number): string {
 export function pad2(n: number): string {
   return String(n).padStart(2, '0')
 }
+
+/** 42 → "0:42", 3800 → "1:03:20" */
+export function formatDuration(seconds: number): string {
+  const total = Math.max(0, Math.round(seconds))
+  const s = total % 60
+  const m = Math.floor(total / 60) % 60
+  const h = Math.floor(total / 3600)
+  return h ? `${h}:${pad2(m)}:${pad2(s)}` : `${m}:${pad2(s)}`
+}

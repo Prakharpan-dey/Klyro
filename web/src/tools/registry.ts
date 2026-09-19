@@ -23,11 +23,12 @@ export function findTool(slug: string | undefined): Tool | undefined {
 export const categoryLabel: Record<ToolMeta['category'], string> = {
   image: 'Image',
   pdf: 'PDF',
+  video: 'Video',
 }
 
 /** Tools by section, in the order the index shows them. */
 export const toolGroups: { group: ToolGroup; tools: Tool[] }[] = (
-  ['Image', 'Pages', 'Stamps', 'Optimise', 'Convert', 'Inspect', 'Secure'] as ToolGroup[]
+  ['Image', 'Video', 'Pages', 'Stamps', 'Optimise', 'Convert', 'Inspect', 'Secure'] as ToolGroup[]
 )
   .map((group) => ({ group, tools: tools.filter((t) => t.group === group) }))
   .filter((section) => section.tools.length > 0)

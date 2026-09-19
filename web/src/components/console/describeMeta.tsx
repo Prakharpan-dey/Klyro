@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react'
-import { formatBytes } from '@/lib/format'
+import { formatBytes, formatDuration } from '@/lib/format'
 import type { FileMeta } from '@/lib/fileMeta'
 
 export function describeMeta(meta: FileMeta | undefined, size: number): ReactNode {
   if (!meta) return `${formatBytes(size)} · reading…`
   const parts: ReactNode[] = []
   if (meta.pages) parts.push(`${meta.pages} pp`)
+  if (meta.durationSec) parts.push(formatDuration(meta.durationSec))
   if (meta.width && meta.height) parts.push(`${meta.width}×${meta.height}`)
   parts.push(formatBytes(size))
   if (meta.encrypted) parts.push(<span className="text-egress">Password protected</span>)
