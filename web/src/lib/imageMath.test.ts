@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cmToPx, renameWithExt, resolveSize, searchQuality } from './imageMath'
+import { cmToPx, extensionFor, renameWithExt, resolveSize, searchQuality } from './imageMath'
 
 const src = { width: 4000, height: 3000 }
 
@@ -81,5 +81,24 @@ describe('searchQuality', () => {
     const r = await searchQuality(encoder(100_000), 1_000)
     expect(r.fits).toBe(false)
     expect(r.quality).toBe(0.05)
+  })
+})
+
+describe('extensionFor', () => {
+  it('names the image formats', () => {
+    expect(extensionFor('image/jpeg')).toBe('jpg')
+    expect(extensionFor('image/avif')).toBe('avif')
+    expect(extensionFor('image/webp')).toBe('webp')
+  })
+
+  it('names the media formats video output uses', () => {
+    expect(extensionFor('video/mp4')).toBe('mp4')
+    expect(extensionFor('video/webm')).toBe('webm')
+    expect(extensionFor('audio/mp4')).toBe('m4a')
+  })
+
+  it('renames a file to the new format, whatever the old case was', () => {
+    expect(renameWithExt('clip.MOV', 'video/mp4', '-small')).toBe('clip-small.mp4')
+    expect(renameWithExt('photo.jpeg', 'image/avif')).toBe('photo.avif')
   })
 })
