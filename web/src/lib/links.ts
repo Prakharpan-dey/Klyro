@@ -6,6 +6,4 @@
  * honest. Set a value to an empty string to hide that link entirely.
  */
 
-export const REPO_URL = 'https://github.com/Prakharpan-dey/Klyro'
-
 export const SUPPORT_URL = 'https://buymeacoffee.com/zeusdotdev'
