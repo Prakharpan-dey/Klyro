@@ -1,4 +1,5 @@
 import {
+  extensionFor,
   isLossy,
   resolveSize,
   searchQuality,
@@ -32,11 +33,23 @@ function createCanvas(width: number, height: number): AnyCanvas {
   return c
 }
 
-function toBlob(canvas: AnyCanvas, type: string, quality?: number): Promise<Blob> {
-  if ('convertToBlob' in canvas) return canvas.convertToBlob({ type, quality })
-  return new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Encoding failed'))), type, quality),
-  )
+async function toBlob(canvas: AnyCanvas, type: string, quality?: number): Promise<Blob> {
+  const blob = await ('convertToBlob' in canvas
+    ? canvas.convertToBlob({ type, quality })
+    : new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error('Encoding failed'))),
+          type,
+          quality,
+        ),
+      ))
+
+  // A browser that cannot write this format quietly hands back a PNG instead,
+  // which would otherwise be saved under the wrong extension.
+  if (blob.type !== type) {
+    throw new Error(`This browser cannot write ${extensionFor(type).toUpperCase()} files`)
+  }
+  return blob
 }
 
 function pickFormat(requested: TransformParams['format'], sourceType: string): ImageFormat {
@@ -83,7 +96,9 @@ export async function transformImage(
     for (let attempt = 0; attempt < 10; attempt++) {
       const canvas = draw(bitmap, width, height, format)
       if (isLossy(format)) {
-        const r = await searchQuality((q) => toBlob(canvas, format, q), params.maxBytes)
+        // AVIF encodes several times slower than JPEG, so it gets a shorter search
+        const steps = format === 'image/avif' ? 5 : 7
+        const r = await searchQuality((q) => toBlob(canvas, format, q), params.maxBytes, { steps })
         last = { blob: r.blob, width, height, quality: r.quality, fits: r.fits }
       } else {
         const blob = await toBlob(canvas, format)

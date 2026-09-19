@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Field } from '@/components/console/Field'
 import { Segmented } from '@/components/console/Segmented'
 import { ToolLayout } from '@/components/tool/ToolLayout'
+import { useImageFormats } from '@/components/tool/useImageFormats'
 import { useToolFiles } from '@/components/tool/useToolFiles'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -32,6 +33,7 @@ export default function ResizeTool() {
   const [dpi, setDpi] = useState<(typeof dpis)[number]>('300')
   const [keepAspect, setKeepAspect] = useState(true)
   const [format, setFormat] = useState<ImageFormat | 'keep'>('keep')
+  const formats = useImageFormats(['image/jpeg', 'image/png', 'image/webp', 'image/avif'])
 
   const w = num(width)
   const h = num(height)
@@ -158,12 +160,7 @@ export default function ResizeTool() {
               label="Output format"
               value={format}
               onChange={setFormat}
-              options={[
-                { value: 'keep', label: 'Same' },
-                { value: 'image/jpeg', label: 'JPG' },
-                { value: 'image/png', label: 'PNG' },
-                { value: 'image/webp', label: 'WebP' },
-              ]}
+              options={[{ value: 'keep', label: 'Same' }, ...formats.options]}
             />
           </Field>
         </>

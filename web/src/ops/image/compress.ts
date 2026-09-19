@@ -1,10 +1,10 @@
 import { formatBytes } from '@/lib/format'
-import { renameWithExt } from '@/lib/imageMath'
+import { renameWithExt, type ImageFormat } from '@/lib/imageMath'
 import type { OutputFile, Progress } from '../types'
 import { runTransform } from './pool'
 
 export interface CompressParams {
-  format: 'image/jpeg' | 'image/webp'
+  format: ImageFormat
   /** 0–1, used when no target size is set */
   quality: number
   targetKB?: number

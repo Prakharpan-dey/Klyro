@@ -2,28 +2,32 @@ import { useState } from 'react'
 import { Field } from '@/components/console/Field'
 import { Segmented } from '@/components/console/Segmented'
 import { ToolLayout } from '@/components/tool/ToolLayout'
+import { useImageFormats } from '@/components/tool/useImageFormats'
 import { useToolFiles } from '@/components/tool/useToolFiles'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
 import { useFileJob } from '@/lib/useFileJob'
+import type { ImageFormat } from '@/lib/imageMath'
 import { compressImages } from '@/ops/image/compress'
 import { meta } from './meta'
 
 type Mode = 'quality' | 'target'
-type Format = 'image/jpeg' | 'image/webp'
 
 const presets = [20, 50, 100, 200, 500]
+const candidates: ImageFormat[] = ['image/jpeg', 'image/webp', 'image/avif', 'image/png']
 
 export default function CompressTool() {
   const files = useToolFiles(meta.accept, meta.multiple)
   const job = useFileJob()
   const [mode, setMode] = useState<Mode>('target')
-  const [format, setFormat] = useState<Format>('image/jpeg')
+  const [format, setFormat] = useState<ImageFormat>('image/jpeg')
   const [quality, setQuality] = useState(75)
   const [targetKB, setTargetKB] = useState('200')
 
   const target = Number(targetKB)
   const targetValid = Number.isFinite(target) && target >= 5
+  const formats = useImageFormats(candidates)
+  const lossless = format === 'image/png'
 
   const run = () =>
     job.run((progress) =>
@@ -61,7 +65,7 @@ export default function CompressTool() {
             />
           </Field>
 
-          {mode === 'target' ? (
+          {mode === 'target' || lossless ? (
             <Field label="Max size per file" htmlFor="target-kb" aside="KB">
               <Input
                 id="target-kb"
@@ -104,11 +108,18 @@ export default function CompressTool() {
               label="Output format"
               value={format}
               onChange={setFormat}
-              options={[
-                { value: 'image/jpeg', label: 'JPG' },
-                { value: 'image/webp', label: 'WebP' },
-              ]}
+              options={formats.options}
             />
+            {lossless && (
+              <p className="readout text-[10px] text-faint">
+                PNG has no quality dial. A size target is met by reducing the dimensions instead.
+              </p>
+            )}
+            {formats.missing.length > 0 && (
+              <p className="readout text-[10px] text-faint">
+                {formats.missing.join(', ')} not available in this browser
+              </p>
+            )}
           </Field>
         </>
       }

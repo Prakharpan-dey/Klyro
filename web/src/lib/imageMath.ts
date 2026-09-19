@@ -1,4 +1,4 @@
-export type ImageFormat = 'image/jpeg' | 'image/png' | 'image/webp'
+export type ImageFormat = 'image/jpeg' | 'image/png' | 'image/webp' | 'image/avif'
 
 export type ResizeSpec =
   | { mode: 'px'; width?: number; height?: number; keepAspect: boolean }
@@ -53,8 +53,18 @@ export function extensionFor(mime: string): string {
       return 'png'
     case 'image/webp':
       return 'webp'
+    case 'image/avif':
+      return 'avif'
     case 'application/pdf':
       return 'pdf'
+    case 'video/mp4':
+      return 'mp4'
+    case 'video/webm':
+      return 'webm'
+    case 'audio/mp4':
+      return 'm4a'
+    case 'audio/webm':
+      return 'weba'
     default:
       return mime.split('/')[1] ?? 'bin'
   }
