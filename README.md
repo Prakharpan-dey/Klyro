@@ -1,6 +1,6 @@
 # Klyro
 
-**A file toolkit that never uploads your files.** 56 tools for images, PDFs and video, all of them running inside the browser tab. No upload endpoint, no account, no tracking.
+**A privacy-first file toolkit that runs in your browser.** 56 tools for images, PDFs and video, all of them running inside the browser tab. No upload endpoint, no account, no tracking.
 
 [![CI](https://github.com/Prakharpan-dey/Klyro/actions/workflows/ci.yml/badge.svg)](https://github.com/Prakharpan-dey/Klyro/actions/workflows/ci.yml)
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
