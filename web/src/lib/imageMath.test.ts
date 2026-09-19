@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { cmToPx, extensionFor, renameWithExt, resolveSize, searchQuality } from './imageMath'
+import {
+  cmToPx,
+  extensionFor,
+  nextScale,
+  renameWithExt,
+  resolveSize,
+  searchQuality,
+} from './imageMath'
 
 const src = { width: 4000, height: 3000 }
 
@@ -100,5 +107,23 @@ describe('extensionFor', () => {
   it('renames a file to the new format, whatever the old case was', () => {
     expect(renameWithExt('clip.MOV', 'video/mp4', '-small')).toBe('clip-small.mp4')
     expect(renameWithExt('photo.jpeg', 'image/avif')).toBe('photo.avif')
+  })
+})
+
+describe('nextScale', () => {
+  it('aims straight at the target instead of creeping', () => {
+    // four times too big means half the width and half the height
+    expect(nextScale(400_000, 100_000)).toBeCloseTo(0.5, 2)
+  })
+
+  it('never erases the picture in one jump, and never stalls', () => {
+    expect(nextScale(50_000_000, 10_000)).toBe(0.35)
+    expect(nextScale(61_000, 60_000)).toBeLessThanOrEqual(0.9)
+    expect(nextScale(61_000, 60_000)).toBeGreaterThan(0.85)
+  })
+
+  it('falls back to a sane step on nonsense input', () => {
+    expect(nextScale(0, 1000)).toBe(0.85)
+    expect(nextScale(1000, 0)).toBe(0.85)
   })
 })
