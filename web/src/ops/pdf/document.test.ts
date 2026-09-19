@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts } from 'pdf-lib'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { fillForm, flattenPdf, readFormFields } from './forms'
 import { clearMetadata, inspectPdf, metadataToText, writeMetadata } from './metadata'
 import { removeAnnotations, scanPrivacy, stripPdf } from './privacy'
@@ -23,6 +23,13 @@ async function richPdf(): Promise<File> {
 
   return new File([(await doc.save()) as BlobPart], 'marksheet.pdf', { type: 'application/pdf' })
 }
+
+// stripPdf rebuilds through qpdf; under node its wasm is a file path, not a URL
+vi.mock('@neslinesli93/qpdf-wasm/dist/qpdf.wasm?url', async () => {
+  const { createRequire } = await import('node:module')
+  const resolve = createRequire(import.meta.url)
+  return { default: resolve.resolve('@neslinesli93/qpdf-wasm/dist/qpdf.wasm') }
+})
 
 describe('metadata', () => {
   it('reads every field plus page facts', async () => {
@@ -71,7 +78,9 @@ describe('privacy', () => {
         .filter((f) => f.present)
         .map((f) => f.id)
         .sort(),
-    ).toEqual(['annotations', 'forms', 'metadata'])
+      // "remnants" is not noise: pdf-lib leaves the parent of a dotted field
+      // name unreferenced, so even a freshly written form carries an orphan
+    ).toEqual(['annotations', 'forms', 'metadata', 'remnants'])
 
     const stripped = await stripPdf(source)
     const after = await scanPrivacy(stripped.file)
