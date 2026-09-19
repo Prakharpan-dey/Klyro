@@ -45,13 +45,11 @@ function InstructionPanel({
   return (
     <Panel label="A · Instruction" tone="deep" className="px-6 py-[26px] [grid-area:a]">
       <h1 className="mt-4 font-sans text-[30px] leading-[1.06] font-medium tracking-[-0.035em] text-foreground sm:text-[38px]">
-        Your files never
-        <br />
-        leave this tab.
+        What needs doing?
       </h1>
       <p className="mt-3.5 max-w-[46ch] font-sans text-[14.5px] leading-relaxed text-pretty text-soft">
-        Compress, resize, convert, merge, split and strip EXIF — every byte is processed on this
-        machine. Describe the job; only that sentence and the file sizes are sent for planning.
+        Describe the job in a sentence and a plan comes back for you to approve. Only that sentence
+        and each file's size and type are sent — the files themselves stay on this machine.
       </p>
 
       <form

@@ -105,8 +105,12 @@ export function ToolNavBody() {
 export function ToolNav() {
   return (
     <aside className="hidden w-[212px] shrink-0 border-r border-line bg-panel lg:block xl:w-[244px]">
-      {/* sticky so the list scrolls on its own while the page behind it moves */}
-      <div className="sticky top-0 flex max-h-dvh min-h-0 flex-col">
+      {/*
+       * Sticky between the two pinned bars. The height cap has to allow for both
+       * (44px + 36px): this list is long enough to reach its cap, so the cap is
+       * what sets the row height, and anything larger scrolls the whole page.
+       */}
+      <div className="sticky top-11 flex max-h-[calc(100dvh-80px)] min-h-0 flex-col">
         <ToolNavBody />
       </div>
     </aside>

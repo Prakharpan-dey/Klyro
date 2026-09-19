@@ -25,18 +25,19 @@ export function AppShell() {
   }, [pathname])
 
   return (
-    <div className="px-3 py-3 sm:px-6 sm:py-8 lg:px-11">
-      <div className="mx-auto flex max-w-[1280px] flex-col border border-line bg-[#070c16] shadow-[0_24px_70px_rgba(0,0,0,.6)]">
-        <TopBar onOpenPalette={() => setPaletteOpen(true)} />
-        <div className="flex min-h-0 flex-1">
-          <ToolNav />
-          {/* min-w-0 keeps the tool grids from pushing the console wider than its frame */}
-          <main className="min-w-0 flex-1 p-3 sm:p-[22px]">
+    <div className="flex min-h-dvh flex-col">
+      <TopBar onOpenPalette={() => setPaletteOpen(true)} />
+      <div className="flex min-h-0 flex-1">
+        <ToolNav />
+        {/* min-w-0 keeps the tool grids from pushing the console wider than the viewport */}
+        <main className="min-w-0 flex-1 p-3 sm:p-6">
+          {/* the rail already eats the left edge, so the work only needs centring past it */}
+          <div className="mx-auto max-w-[1440px]">
             <Outlet />
-          </main>
-        </div>
-        <StatusBar />
+          </div>
+        </main>
       </div>
+      <StatusBar />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   )

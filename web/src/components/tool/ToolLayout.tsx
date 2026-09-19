@@ -71,7 +71,7 @@ export function ToolLayout({
   return (
     <div className="flex flex-col gap-3.5">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2 border-l border-line pl-5">
-        <Link to="/" className="readout text-[10px] text-dim hover:text-foreground">
+        <Link to="/console" className="readout text-[10px] text-dim hover:text-foreground">
           ← Console
         </Link>
         <span className="bg-primary px-[7px] py-1 text-[10px] leading-none font-semibold text-primary-foreground">
