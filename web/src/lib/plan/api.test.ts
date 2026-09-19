@@ -81,15 +81,22 @@ describe('buildPlanRequest', () => {
     expect(buildPlanRequest('x', staged, true).files[0].name).toBe('aadhaar.jpg')
   })
 
-  it('describes a video as a file it cannot act on, and nothing more', () => {
+  it('describes a video by duration and sound, which the video ops need', () => {
     const file = new File(['x'], 'clip.mp4', { type: 'video/mp4' })
     const built = buildPlanRequest(
       'shrink it',
-      [{ file, meta: meta('video', { durationSec: 42 }) }],
+      [{ file, meta: meta('video', { durationSec: 42, hasAudio: true }) }],
       false,
     )
 
-    expect(built.files[0].kind).toBe('other')
-    expect(JSON.stringify(built)).not.toContain('42')
+    expect(built.files[0]).toMatchObject({ kind: 'video', durationSec: 42, hasAudio: true })
+    // still metadata only: nothing about the picture, and no name
+    expect(JSON.stringify(built)).not.toContain('clip')
+  })
+
+  it('says a silent clip is silent rather than leaving it unknown', () => {
+    const file = new File(['x'], 'clip.mp4', { type: 'video/mp4' })
+    const built = buildPlanRequest('extract the audio', [{ file, meta: meta('video') }], false)
+    expect(built.files[0].hasAudio).toBe(false)
   })
 })

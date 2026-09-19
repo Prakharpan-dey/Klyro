@@ -3,8 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { planWithMock } from './mock'
 import { handler } from './plan'
 import { validatePlan } from './planner'
-import { SUBMIT_PLAN_TOOL, userMessage } from './prompt'
-import { checkRefs, planRequestSchema, type PlanRequest } from './schema'
+import { SUBMIT_PLAN_TOOL, SYSTEM_PROMPT, userMessage } from './prompt'
+import {
+  OPS,
+  checkParams,
+  checkRefs,
+  planRequestSchema,
+  stepParamsSchema,
+  type PlanRequest,
+} from './schema'
 
 const pdfs: PlanRequest['files'] = [
   { index: 0, kind: 'pdf', mime: 'application/pdf', sizeKB: 2100, pages: 4 },
@@ -113,7 +120,23 @@ describe('tool spec', () => {
 
   it('offers every op the executor implements', () => {
     const schema = SUBMIT_PLAN_TOOL.function.parameters as Record<string, any>
-    expect(schema.properties.steps.items.properties.op.enum).toContain('pdf.merge')
+    expect(schema.properties.steps.items.properties.op.enum).toEqual([...OPS])
+  })
+
+  it('describes every op it offers, so the model is never told only a name', () => {
+    for (const op of OPS) expect(SYSTEM_PROMPT, op).toContain(`- ${op} `)
+  })
+
+  it('declares a json schema for every param the zod schema accepts', () => {
+    const schema = SUBMIT_PLAN_TOOL.function.parameters as Record<string, any>
+    const declared = Object.keys(schema.properties.steps.items.properties.params.properties)
+    const accepted = Object.keys(stepParamsSchema.shape)
+    expect(declared.sort()).toEqual(accepted.sort())
+  })
+
+  it('refuses to plan anything needing a password', () => {
+    expect(SYSTEM_PROMPT).toMatch(/Never plan a step that needs a password/)
+    expect(SYSTEM_PROMPT).not.toMatch(/There is no PDF compression/)
   })
 })
 
@@ -126,6 +149,51 @@ describe('mock planner', () => {
 
   it('asks for files when none are staged', () => {
     expect(planWithMock({ instruction: 'compress', files: [] }).clarification).toBeTruthy()
+  })
+
+  it('plans a PDF size target instead of refusing it', () => {
+    const plan = planWithMock({ instruction: 'merge these and compress to 500kb', files: pdfs })
+    expect(plan.steps.map((s) => s.op)).toEqual(['pdf.merge', 'pdf.compress'])
+    expect(plan.steps[1].params.targetKB).toBe(500)
+    expect(plan.clarification).toBeNull()
+  })
+
+  it('plans video work now that a clip is not simply "other"', () => {
+    const plan = planWithMock({
+      instruction: 'trim to the first 10 seconds and shrink to 8mb',
+      files: [{ index: 0, kind: 'video', mime: 'video/mp4', sizeKB: 40_000, durationSec: 62 }],
+    })
+    expect(plan.steps.map((s) => s.op)).toEqual(['video.trim', 'video.compress'])
+    expect(plan.steps[1].inputs).toEqual(['step:1'])
+  })
+})
+
+describe('checkParams', () => {
+  const plan = (steps: Parameters<typeof checkParams>[0]['steps']) => ({
+    summary: 's',
+    clarification: null,
+    steps,
+  })
+
+  it('rejects a step missing the param that gives it meaning', () => {
+    expect(
+      checkParams(plan([{ op: 'pdf.extract', inputs: ['file:0'], params: {} }])),
+    ).toMatch(/missing pages/)
+  })
+
+  it('passes a complete step', () => {
+    expect(
+      checkParams(plan([{ op: 'pdf.extract', inputs: ['file:0'], params: { pages: '1-2' } }])),
+    ).toBeNull()
+  })
+
+  it('is enforced by validatePlan, not only exported', () => {
+    expect(() =>
+      validatePlan(
+        { summary: 's', clarification: null, steps: [{ op: 'pdf.watermark', inputs: ['file:0'], params: {} }] },
+        1,
+      ),
+    ).toThrow(/missing text/)
   })
 })
 

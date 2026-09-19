@@ -3,7 +3,7 @@ import type { OutputFile } from '@/ops/types'
 import { buildPlanRequest } from './api'
 import { describeStep } from './describe'
 import { checkPlan, executePlan, type StepProgress, type StepRunner } from './execute'
-import type { Plan } from './schema'
+import { OPS, type Plan, type PlanStep } from './schema'
 
 const file = (name: string, type: string) => new File(['x'], name, { type })
 const out = (name: string): OutputFile => ({
@@ -46,6 +46,38 @@ describe('checkPlan', () => {
 
   it('rejects missing files', () => {
     expect(checkPlan(mergeThenDelete, ['pdf'])).toMatch(/isn't staged/)
+  })
+
+  it('keeps video work off images and vice versa', () => {
+    const shrink: Plan = {
+      summary: '',
+      clarification: null,
+      steps: [{ op: 'video.compress', inputs: ['file:0'], params: { targetMB: 8 } }],
+    }
+    expect(checkPlan(shrink, ['video'])).toBeNull()
+    expect(checkPlan(shrink, ['pdf'])).toMatch(/needs videos/)
+  })
+
+  it('lets an op that cannot tell the kind from metadata take anything', () => {
+    const ocr: Plan = {
+      summary: '',
+      clarification: null,
+      steps: [{ op: 'pdf.ocr', inputs: ['file:0'], params: {} }],
+    }
+    expect(checkPlan(ocr, ['pdf'])).toBeNull()
+    expect(checkPlan(ocr, ['image'])).toBeNull()
+  })
+
+  it('stops a chain at an output nothing can consume', () => {
+    const plan: Plan = {
+      summary: '',
+      clarification: null,
+      steps: [
+        { op: 'pdf.toText', inputs: ['file:0'], params: {} },
+        { op: 'pdf.merge', inputs: ['step:1'], params: {} },
+      ],
+    }
+    expect(checkPlan(plan, ['pdf'])).toMatch(/needs PDFs/)
   })
 })
 
@@ -108,6 +140,24 @@ describe('buildPlanRequest', () => {
     },
   ]
 
+  it('tells the planner how long a clip runs, and whether it has sound', () => {
+    const clip = [
+      {
+        file: file('holiday.mp4', 'video/mp4'),
+        meta: {
+          kind: 'video' as const,
+          mime: 'video/mp4',
+          size: 1,
+          durationSec: 62.4,
+          hasAudio: true,
+        },
+      },
+    ]
+    const req = buildPlanRequest('shrink it', clip, false)
+    expect(req.files[0]).toMatchObject({ kind: 'video', durationSec: 62, hasAudio: true })
+    expect(JSON.stringify(req)).not.toContain('holiday')
+  })
+
   it('leaves out file names unless allowed', () => {
     const req = buildPlanRequest('  merge  ', staged, false)
     expect(req).toEqual({
@@ -120,6 +170,26 @@ describe('buildPlanRequest', () => {
 })
 
 describe('describeStep', () => {
+  it('has a line for every operation, with no placeholder left in it', () => {
+    const params: Partial<Record<PlanStep['op'], PlanStep['params']>> = {
+      'pdf.extract': { pages: '1' },
+      'pdf.deletePages': { pages: '1' },
+      'pdf.reorder': { order: '1' },
+      'pdf.insertBlank': { positions: '1' },
+      'pdf.crop': { cropMm: '10' },
+      'pdf.watermark': { text: 'DRAFT' },
+      'pdf.headerFooter': { template: '{n}' },
+      'pdf.fromText': { text: 'hi' },
+      'video.trim': { startSec: 0, endSec: 10 },
+    }
+    for (const op of OPS) {
+      const line = describeStep({ op, inputs: ['file:0'], params: params[op] ?? {} }, ['a.pdf'])
+      expect(line, op).toBeTruthy()
+      expect(line, op).not.toContain('undefined')
+      expect(line, op).not.toBe(op)
+    }
+  })
+
   it('reads naturally', () => {
     const names = ['a.pdf', 'b.pdf']
     expect(describeStep(mergeThenDelete.steps[0], names)).toBe('Merge 2 files into one PDF')
@@ -129,5 +199,14 @@ describe('describeStep', () => {
     expect(
       describeStep({ op: 'image.compress', inputs: ['file:1'], params: { targetKB: 200 } }, names),
     ).toBe('Compress b.pdf to ≤ 200 KB')
+    expect(
+      describeStep({ op: 'pdf.compress', inputs: ['file:0'], params: { targetKB: 500 } }, names),
+    ).toBe('Compress a.pdf to ≤ 500 KB')
+    expect(
+      describeStep(
+        { op: 'video.trim', inputs: ['file:0'], params: { startSec: 0, endSec: 10 } },
+        names,
+      ),
+    ).toBe('Trim a.pdf to 0s-10s')
   })
 })
