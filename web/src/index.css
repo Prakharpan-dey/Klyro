@@ -116,6 +116,31 @@
   ::selection {
     background: rgb(77 184 255 / 0.35);
   }
+
+  /* the browser's own scrollbar is the last piece of chrome that does not
+     belong to this console, so it gets the same square, hairline treatment */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--well);
+    border-left: 1px solid var(--line-soft);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line);
+    border: 2px solid var(--well);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2f6ba8;
+  }
+  ::-webkit-scrollbar-corner {
+    background: var(--well);
+  }
   a {
     @apply text-primary transition-colors hover:text-[#9ad6ff];
   }
@@ -128,6 +153,13 @@
   }
   .readout {
     @apply font-mono text-[11px] tracking-[0.08em] uppercase;
+  }
+  /* scrolls, but without the bar: for lists whose own frame already says so */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
   .stripes {
     background: repeating-linear-gradient(
