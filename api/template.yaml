@@ -10,7 +10,9 @@ Parameters:
   AllowedOrigins:
     Type: CommaDelimitedList
     Default: http://localhost:5173
-    Description: Origins allowed to call the API (the deployed site, plus localhost for development)
+    Description: >
+      Origins allowed to call the API. Every origin the site is served from has
+      to be listed: a custom domain added later will fail CORS until it is.
   MockPlanner:
     Type: String
     Default: '0'
