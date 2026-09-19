@@ -1,6 +1,6 @@
 # Klyro
 
-**A file toolkit that never uploads your files.** Compress, resize, convert, merge, split and reorganise images and PDFs entirely inside your browser, and describe the job in plain language instead of hunting for the right tool.
+**A file toolkit that never uploads your files.** Compress, resize, convert, merge, split and reorganise images, PDFs and video entirely inside your browser, and describe the job in plain language instead of hunting for the right tool.
 
 🔗 **Live:** https://main.d21hq3du8p25uu.amplifyapp.com
 🔌 **Planner API:** https://bpnrtqfqtc.execute-api.ap-south-1.amazonaws.com
@@ -19,11 +19,12 @@ Klyro does the whole job locally. The only thing that can leave your machine is 
 
 ## What it does
 
-**51 tools**, grouped the way the work actually splits up.
+**56 tools**, grouped the way the work actually splits up.
 
 | Group | Tools |
 |---|---|
-| **Image** (3) | Compress to an exact KB target, resize by px, percent or **cm at a chosen DPI** (the 3.5 x 4.5 cm photo every form wants), convert between JPG, PNG and WebP |
+| **Image** (4) | Compress to an exact KB target, resize by px, percent or **cm at a chosen DPI** (the 3.5 x 4.5 cm photo every form wants), convert between JPG, PNG, WebP and AVIF, and see and remove what a photo records about you |
+| **Video** (4) | Compress to a target size with a live estimate, trim with a scrubbing preview, convert between MP4 and WebM, mute or pull out the audio |
 | **Pages** (15) | Merge, split, organize by thumbnail, rotate, delete, extract, reverse, insert blanks, alternate and mix, crop, fix page size, N-up, booklet, divide, overlay |
 | **Stamps** (5) | Page numbers, watermark, header and footer, Bates numbering, draw-and-place signature |
 | **Optimise** (6) | Compress to a KB target, rasterize, colour filters, remove blank pages, repair, linearize for fast web view |
@@ -33,13 +34,13 @@ Klyro does the whole job locally. The only thing that can leave your machine is 
 
 Plus a **command bar**: type "merge these, remove page 3, under 500 KB" and the planner returns steps, which are shown for approval and then executed locally.
 
-Re-encoding also strips EXIF, so camera model and GPS coordinates do not travel with the photo you upload to a portal.
+Re-encoding also strips EXIF, so camera model and GPS coordinates do not travel with the photo you upload to a portal. When you want the original picture kept exactly, **Photo Privacy** shows what is in there and removes it without re-encoding at all.
 
 ## How the privacy claim actually holds
 
 This is the part I cared about most, because "we respect your privacy" is easy to write and hard to verify.
 
-1. **There is no upload endpoint.** Images go through canvas and Web Workers; PDFs through pdf-lib and pdf.js. Look through `web/src/ops/` and you will not find a request that carries file bytes.
+1. **There is no upload endpoint.** Images go through canvas and Web Workers; PDFs through pdf-lib and pdf.js; video through WebCodecs, which is the same hardware encoder your phone records with. Look through `web/src/ops/` and you will not find a request that carries file bytes.
 2. **The planner only receives metadata.** The request body is the instruction plus, per file, its kind, mime type, size in KB, and page count or pixel size. A typical request is about 200 bytes. File **names** are excluded unless you flip a switch.
 3. **The browser enforces it.** The site ships a Content-Security-Policy whose `connect-src` allows only the site itself and the planner API. Even a bug or a malicious dependency could not post your file somewhere else.
 4. **The server forgets.** The Lambda logs latency, file count, step count and token usage. It never logs the instruction or file names, and there is a test that fails if either leaks.
@@ -134,10 +135,14 @@ Template parameters:
 - **WebAssembly under the real CSP:** encryption runs qpdf compiled to WASM. The `.wasm` ships from this origin, `script-src` allows `'wasm-unsafe-eval'` and nothing else, and an encrypt-then-decrypt round trip was verified against the production build with zero violations and no off-origin requests.
 - **Office output opened by another reader:** the generated `.xlsx` is loaded back with openpyxl and the `.docx` parsed as OOXML, so the files are not only readable by the code that wrote them.
 - **OCR proven not to change the page:** a scan was read, the invisible text layer added, and the result rendered back to a bitmap and compared with the original pixel by pixel. Maximum difference: zero. Extracting text from the output returns what the scan says, in English and in Hindi.
+- **"The picture is untouched" checked pixel by pixel:** a photo carrying a camera, a timestamp, an owner and GPS coordinates was cleaned, and both versions were decoded and compared — 238 bytes lighter, five items gone, and **0 differing subpixels out of 5,600,000**.
+- **Video checked by decoding the result, not by trusting the encoder:** a clip was compressed to a 1 MB target and came back at 1.0 MB, and a frame three seconds in was decoded from both files and compared — same picture, 852×480 instead of 1280×720. Trim produced exactly 2.000 s from a 1.5–3.5 s cut, mute came back with no audio track, and extract came back with no video track.
 - **Signatures checked by something other than the code that wrote them:** a signed PDF's detached PKCS#7 blob and the bytes it covers were handed to `openssl cms -verify`, which reported `CMS Verification successful`. The checker also has to notice an edited byte and bytes appended past the signed range, and it does.
 
 ## Known limitations
 
+- **Video needs WebCodecs.** Encoding uses the browser's own hardware encoder, which Chrome, Edge and Safari 16.4+ have and older browsers do not. The tool checks before it starts and says so plainly rather than failing halfway. HEVC (iPhone `.mov`) decoding also depends on the machine, and that is checked per file.
+- **A phone is a small computer.** Video work is capped at 500 MB and warns above 200 MB, because a mobile tab is killed long before a desktop one runs out of room.
 - **PDF compression re-renders the pages.** Every page is rendered and re-encoded as JPEG, so the file shrinks but the text stops being selectable. The tool says this before you run it.
 - **PDF to Word carries text, not layout.** A PDF stores glyphs at coordinates; paragraphs, tables and images do not survive the trip.
 - **PDF to Excel is a heuristic.** Rows come from text sharing a baseline and columns from text starting at the same position. Merged cells and wrapped lines are where it slips.
@@ -155,12 +160,13 @@ Template parameters:
 - A monorepo Amplify app rejects a plain `customHeaders:` file; it needs the `applications:` / `appRoot:` wrapper.
 - pdf.js schedules rendering with `requestAnimationFrame`, which browsers pause in background tabs. Exports stalled until I switched to the print intent.
 - Writing a CSP first, then running the production build against it locally, catches problems that never appear in dev mode.
+- Removing EXIF does not have to cost quality. The common advice is to re-save the photo, which re-encodes it; a JPEG, PNG or WebP can instead be rewritten around its own pixel data, dropping the metadata segments and nothing else.
+- `new Quality(1_200_000)` in mediabunny is a quality *level*, not a bitrate; the bitrate has to be named (`new Quality({ bitrate })`). The first target-size run came back 50% larger than the source, which is how I found out. There is now a test that fails if those two are ever confused again.
 - A signed PDF signs itself around a hole: the signature dictionary reserves space, the byte range names everything except that hole, and the blob is written into it afterwards. Understanding that made the placeholder-then-patch dance obvious rather than mysterious.
 - A `.docx` and an `.xlsx` are zip archives of XML. Writing them by hand with the zip library already in the bundle costs about 200 lines and no new dependency, and openpyxl opens the result without complaint.
 
 ## Roadmap
 
-- Video compression once the PDF and image paths are stable
 - Presets for common exam and government form requirements, each linked to its official source
 - Offline support with a service worker
 - Compare two PDFs, edit bookmarks, deskew crooked scans

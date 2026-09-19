@@ -11,11 +11,15 @@ const points = [
   },
   {
     title: 'Metadata is stripped',
-    body: 'Re-encoded images drop EXIF blocks, including camera details and GPS location.',
+    body: 'Re-encoded images drop EXIF blocks, including camera details and GPS location. Photo Privacy shows you what a picture is carrying and takes it out without touching a pixel.',
   },
   {
     title: 'One request can leave',
     body: 'The optional planner sends your typed instruction plus file type, size and page count — never file contents, and file names only if you allow it.',
+  },
+  {
+    title: 'The camera, only when you ask',
+    body: 'The Scan tool can use your camera, and nothing else here can. It starts when you press start, stops when you leave the page, and the frames go straight into a PDF in this tab. Nothing is recorded.',
   },
   {
     title: 'No tracking',
