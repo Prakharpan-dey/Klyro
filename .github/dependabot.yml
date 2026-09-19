@@ -1,0 +1,27 @@
+version: 2
+
+# The engines here move fast and matter: a tesseract or mediabunny release can
+# rename an export the app calls. The export-contract tests in web/src/ops/
+# catch that in CI, which is what makes an automatic bump safe to review.
+updates:
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      dev-tooling:
+        patterns: ['@types/*', 'oxlint', 'prettier', 'typescript', 'vitest', 'vite']
+      react:
+        patterns: ['react', 'react-dom', 'react-router']
+
+  - package-ecosystem: npm
+    directory: /api
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
