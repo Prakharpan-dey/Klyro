@@ -1,6 +1,21 @@
 {
   "name": "klyro-api",
   "version": "0.1.0",
+  "private": true,
+  "description": "Klyro planner API: turns an instruction plus file metadata into a plan. Never receives file contents.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Prakhar Pandey",
+  "homepage": "https://github.com/Prakharpan-dey/Klyro#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Prakharpan-dey/Klyro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Prakharpan-dey/Klyro/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=.env scripts/dev-server.ts",
     "typecheck": "tsc",
@@ -12,7 +27,6 @@
     "bundle": "esbuild src/plan.ts --bundle --platform=node --format=esm --target=es2022 --minify --outfile=dist/plan.mjs --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\""
   },
   "type": "module",
-  "private": true,
   "dependencies": {
     "@aws-crypto/sha256-js": "^5.2.0",
     "@aws-sdk/credential-provider-node": "^3.972.83",

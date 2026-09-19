@@ -1,0 +1,36 @@
+Klyro — a file toolkit that runs entirely in your browser.
+Copyright (C) 2026 Prakhar Pandey
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>.
+
+Because Klyro is normally used over a network, section 13 applies: anyone who
+runs a modified version and lets others use it must offer those users the
+corresponding source. The deployed site does this with the "Source" link in its
+status bar, which points at the repository this copy came from.
+
+--- Third-party components ---
+
+Klyro bundles or builds on the following, under their own licences:
+
+  pdf-lib                 MIT
+  pdf.js (pdfjs-dist)     Apache-2.0
+  qpdf (qpdf-wasm)        ISC / Apache-2.0
+  Tesseract.js            Apache-2.0
+  mediabunny              MPL-2.0
+  node-forge              BSD-3-Clause
+  JSZip                   MIT
+  React, Vite, Tailwind CSS, cmdk, Radix UI, Sonner    MIT
+
+mediabunny is used unmodified and its source carries no "Incompatible With
+Secondary Licenses" notice, so MPL-2.0 section 3.3 permits its inclusion here.
+The Apache-2.0 components are compatible with version 3 of the GNU licences.

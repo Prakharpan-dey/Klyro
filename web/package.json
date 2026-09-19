@@ -1,7 +1,31 @@
 {
   "name": "klyro-web",
-  "private": true,
   "version": "0.1.0",
+  "private": true,
+  "description": "Klyro web app: 56 image, PDF and video tools that run entirely in the browser.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Prakhar Pandey",
+  "homepage": "https://github.com/Prakharpan-dey/Klyro#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Prakharpan-dey/Klyro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Prakharpan-dey/Klyro/issues"
+  },
+  "keywords": [
+    "pdf",
+    "image",
+    "video",
+    "privacy",
+    "local-first",
+    "webassembly",
+    "webcodecs",
+    "ocr"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "type": "module",
   "scripts": {
     "predev": "node scripts/ocr-assets.mjs",
