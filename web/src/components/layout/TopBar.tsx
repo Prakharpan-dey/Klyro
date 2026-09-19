@@ -22,9 +22,10 @@ export function TopBar({ onOpenPalette }: { onOpenPalette: () => void }) {
     <header className="flex h-11 items-center justify-between border-b border-line bg-card px-[18px]">
       <Logo />
       <nav className="flex items-center gap-[18px] text-[11px] leading-none tracking-[0.1em]">
-        <Link to="/#tools" className="hidden text-faint hover:text-foreground sm:inline">
+        {/* on a phone there is no rail and no Ctrl-K, so this is the way in */}
+        <button type="button" onClick={onOpenPalette} className="text-faint hover:text-foreground">
           TOOLS
-        </Link>
+        </button>
         <NavLink to="/privacy" className={navClass}>
           PRIVACY
         </NavLink>
