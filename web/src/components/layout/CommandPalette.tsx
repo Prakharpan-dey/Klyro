@@ -8,7 +8,7 @@ import {
   CommandList,
   CommandShortcut,
 } from '@/components/ui/command'
-import { categoryLabel, tools } from '@/tools/registry'
+import { toolGroups } from '@/tools/registry'
 
 interface CommandPaletteProps {
   open: boolean
@@ -17,7 +17,6 @@ interface CommandPaletteProps {
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const navigate = useNavigate()
-  const categories = [...new Set(tools.map((t) => t.category))]
 
   const go = (to: string) => {
     onOpenChange(false)
@@ -35,21 +34,20 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       <CommandInput placeholder="Search tools…" />
       <CommandList>
         <CommandEmpty>No matching tool.</CommandEmpty>
-        {categories.map((cat) => (
-          <CommandGroup key={cat} heading={categoryLabel[cat]}>
-            {tools
-              .filter((t) => t.category === cat)
-              .map((t) => (
-                <CommandItem
-                  key={t.slug}
-                  value={`${t.title} ${t.summary} ${t.code}`}
-                  onSelect={() => go(`/tools/${t.slug}`)}
-                >
-                  <span className="font-sans text-[13px]">{t.title}</span>
-                  <span className="truncate text-faint">{t.summary}</span>
-                  <CommandShortcut>{t.code}</CommandShortcut>
-                </CommandItem>
-              ))}
+        {/* same sections as the rail, so the two ways in agree on one taxonomy */}
+        {toolGroups.map((section) => (
+          <CommandGroup key={section.group} heading={section.group}>
+            {section.tools.map((t) => (
+              <CommandItem
+                key={t.slug}
+                value={`${t.title} ${t.summary} ${t.code}`}
+                onSelect={() => go(`/tools/${t.slug}`)}
+              >
+                <span className="font-sans text-[13px]">{t.title}</span>
+                <span className="truncate text-faint">{t.summary}</span>
+                <CommandShortcut>{t.code}</CommandShortcut>
+              </CommandItem>
+            ))}
           </CommandGroup>
         ))}
         <CommandGroup heading="Go to">

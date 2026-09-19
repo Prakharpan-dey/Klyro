@@ -31,6 +31,8 @@ interface ToolLayoutProps {
   compareSizes?: boolean
   /** show a stop button; only long jobs pass an abort signal through */
   cancellable?: boolean
+  /** override when a workbench contributes more than one lettered panel */
+  outputLabel?: string
 }
 
 export function ToolLayout({
@@ -47,6 +49,7 @@ export function ToolLayout({
   workbench,
   compareSizes = true,
   cancellable = false,
+  outputLabel,
 }: ToolLayoutProps) {
   const running = job.status === 'running'
   const pct = job.total ? Math.min(100, Math.round((job.done / job.total) * 100)) : 0
@@ -68,8 +71,8 @@ export function ToolLayout({
   return (
     <div className="flex flex-col gap-3.5">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2 border-l border-line pl-5">
-        <Link to="/#tools" className="readout text-[10px] text-dim hover:text-foreground">
-          ← Index
+        <Link to="/" className="readout text-[10px] text-dim hover:text-foreground">
+          ← Console
         </Link>
         <span className="bg-primary px-[7px] py-1 text-[10px] leading-none font-semibold text-primary-foreground">
           {meta.code}
@@ -80,7 +83,7 @@ export function ToolLayout({
         <p className="w-full font-sans text-sm text-soft">{meta.summary}</p>
       </div>
 
-      <div className="grid grid-cols-1 items-start gap-3.5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-3.5 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <Panel
           label="A · Intake"
           className="flex flex-col self-stretch"
@@ -156,7 +159,7 @@ export function ToolLayout({
       {workbench}
 
       <Panel
-        label={workbench ? 'D · Output' : 'C · Output'}
+        label={outputLabel ?? (workbench ? 'D · Output' : 'C · Output')}
         tone="deep"
         meta={
           job.status === 'done' ? (

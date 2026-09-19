@@ -1,5 +1,4 @@
 import { useRef, useState, type FormEvent, type RefObject } from 'react'
-import { Link } from 'react-router'
 import { Dropzone } from '@/components/console/Dropzone'
 import { describeMeta } from '@/components/console/describeMeta'
 import { FileRow } from '@/components/console/FileRow'
@@ -16,7 +15,6 @@ import { formatBytes } from '@/lib/format'
 import { describeStep } from '@/lib/plan/describe'
 import type { StepProgress } from '@/lib/plan/execute'
 import { cn } from '@/lib/utils'
-import { toolGroups, tools } from '@/tools/registry'
 
 type Planner = ReturnType<typeof usePlanner>
 
@@ -388,48 +386,6 @@ function OutputPanel({ planner }: { planner: Planner }) {
   )
 }
 
-function ToolIndexPanel() {
-  return (
-    <Panel
-      id="tools"
-      label="F · Tool index"
-      tone="deep"
-      className="scroll-mt-6 [grid-area:f]"
-      meta={<span className="text-primary">All {tools.length}</span>}
-    >
-      <div className="mt-3.5 flex flex-col gap-3.5">
-        {toolGroups.map((section) => (
-          <div key={section.group}>
-            <div className="mb-2 flex items-center gap-3">
-              <span className="label text-faint">{section.group}</span>
-              <span className="h-px flex-1 bg-line-soft" />
-            </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-px border border-line-soft bg-line-soft">
-              {section.tools.map((t) => (
-                <Link
-                  key={t.slug}
-                  to={`/tools/${t.slug}`}
-                  className="group bg-well px-4 py-[15px] transition-colors hover:bg-accent"
-                >
-                  <div className="text-[9.5px] leading-none tracking-[0.14em] text-primary">
-                    {t.code}
-                  </div>
-                  <div className="mt-[9px] font-sans text-[13.5px] leading-tight font-medium text-foreground">
-                    {t.title}
-                  </div>
-                  <div className="mt-[5px] font-sans text-[11.5px] leading-normal text-faint group-hover:text-soft">
-                    {t.summary}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </Panel>
-  )
-}
-
 export function Home() {
   const planner = usePlanner()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -438,10 +394,11 @@ export function Home() {
   return (
     <div
       className={cn(
-        'grid grid-cols-1 items-start gap-3.5 md:grid-cols-2 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]',
+        // the rail costs 212px, so the lopsided split waits for xl or the intake gets cramped
+        'grid grid-cols-1 items-start gap-3.5 md:grid-cols-2 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]',
         hasOutput
-          ? "[grid-template-areas:'a'_'b'_'c'_'d'_'g'_'e'_'f'] md:[grid-template-areas:'a_a'_'b_b'_'c_c'_'d_e'_'g_g'_'f_f'] lg:[grid-template-areas:'a_b'_'c_b'_'d_e'_'g_g'_'f_f']"
-          : "[grid-template-areas:'a'_'b'_'c'_'d'_'e'_'f'] md:[grid-template-areas:'a_a'_'b_b'_'c_c'_'d_e'_'f_f'] lg:[grid-template-areas:'a_b'_'c_b'_'d_e'_'f_f']",
+          ? "[grid-template-areas:'a'_'b'_'c'_'d'_'g'_'e'] md:[grid-template-areas:'a_a'_'b_b'_'c_c'_'d_e'_'g_g'] xl:[grid-template-areas:'a_b'_'c_b'_'d_e'_'g_g']"
+          : "[grid-template-areas:'a'_'b'_'c'_'d'_'e'] md:[grid-template-areas:'a_a'_'b_b'_'c_c'_'d_e'] xl:[grid-template-areas:'a_b'_'c_b'_'d_e']",
       )}
     >
       <InstructionPanel planner={planner} inputRef={inputRef} />
@@ -450,7 +407,6 @@ export function Home() {
       <RunPanel planner={planner} />
       <TelemetryPanel planner={planner} />
       {hasOutput && <OutputPanel planner={planner} />}
-      <ToolIndexPanel />
     </div>
   )
 }
