@@ -17,34 +17,87 @@ export type StepRunner = (
   report: (label: string) => void,
 ) => Promise<OutputFile[]>
 
-export type OpKind = 'image' | 'pdf'
+export type OpKind = 'image' | 'pdf' | 'video' | 'other'
+/** 'any' means the op does not care, because the kind cannot be told apart from metadata. */
+type InputKind = OpKind | 'any'
+
+const KIND_LABEL: Record<OpKind, string> = {
+  image: 'images',
+  pdf: 'PDFs',
+  video: 'videos',
+  other: 'files of another kind',
+}
 
 /** Which file kind each op consumes. */
-export const INPUT_KIND: Record<PlanStep['op'], OpKind> = {
+export const INPUT_KIND: Record<PlanStep['op'], InputKind> = {
   'image.compress': 'image',
   'image.resize': 'image',
   'image.convert': 'image',
+  'image.stripExif': 'image',
   'pdf.merge': 'pdf',
   'pdf.split': 'pdf',
   'pdf.extract': 'pdf',
   'pdf.deletePages': 'pdf',
   'pdf.rotate': 'pdf',
   'pdf.reorder': 'pdf',
+  'pdf.reverse': 'pdf',
+  'pdf.insertBlank': 'pdf',
+  'pdf.removeBlank': 'pdf',
+  'pdf.alternateMix': 'pdf',
+  'pdf.crop': 'pdf',
+  'pdf.nUp': 'pdf',
+  'pdf.booklet': 'pdf',
+  'pdf.divide': 'pdf',
+  'pdf.fixSize': 'pdf',
+  'pdf.overlay': 'pdf',
+  'pdf.watermark': 'pdf',
+  'pdf.pageNumbers': 'pdf',
+  'pdf.headerFooter': 'pdf',
+  'pdf.bates': 'pdf',
   'pdf.fromImages': 'image',
   'pdf.toImages': 'pdf',
+  // takes nothing: the text comes from the instruction
+  'pdf.fromText': 'any',
+  'pdf.toText': 'pdf',
+  'pdf.toDocx': 'pdf',
+  'pdf.toExcel': 'pdf',
+  // a spreadsheet is staged as 'other', which is indistinguishable from anything else
+  'pdf.fromExcel': 'any',
+  // reads a scan, which may arrive as a PDF or as an image
+  'pdf.ocr': 'any',
+  'pdf.compress': 'pdf',
+  'pdf.rasterize': 'pdf',
+  'pdf.repair': 'pdf',
+  'pdf.linearize': 'pdf',
+  'pdf.flatten': 'pdf',
+  'pdf.strip': 'pdf',
+  'pdf.removeAnnotations': 'pdf',
+  'pdf.setMetadata': 'pdf',
+  'video.compress': 'video',
+  'video.convert': 'video',
+  'video.trim': 'video',
+  'video.extractAudio': 'video',
 }
 
+/** What each op hands on. 'other' is a dead end: nothing can be chained from it. */
 export const OUTPUT_KIND: Record<PlanStep['op'], OpKind> = {
-  ...INPUT_KIND,
+  ...(INPUT_KIND as Record<PlanStep['op'], OpKind>),
   'pdf.fromImages': 'pdf',
   'pdf.toImages': 'image',
+  'pdf.fromText': 'pdf',
+  'pdf.fromExcel': 'pdf',
+  'pdf.toText': 'other',
+  'pdf.toDocx': 'other',
+  'pdf.toExcel': 'other',
+  'pdf.ocr': 'pdf',
+  'video.extractAudio': 'other',
 }
 
 /**
  * Checks a plan against the files actually staged, before anything runs.
  * Returns a message for the first problem found.
  */
-export function checkPlan(plan: Plan, fileKinds: ('image' | 'pdf' | 'other')[]): string | null {
+export function checkPlan(plan: Plan, fileKinds: (OpKind | 'video')[]): string | null {
   const stepKinds: OpKind[] = []
   for (const [i, step] of plan.steps.entries()) {
     const want = INPUT_KIND[step.op]
@@ -59,7 +112,7 @@ export function checkPlan(plan: Plan, fileKinds: ('image' | 'pdf' | 'other')[]):
         if (n < 1 || n > i) return `Step ${i + 1} uses the result of a later step`
         kind = stepKinds[n - 1]
       }
-      if (kind !== want) return `Step ${i + 1} needs ${want === 'pdf' ? 'PDFs' : 'images'}`
+      if (want !== 'any' && kind !== want) return `Step ${i + 1} needs ${KIND_LABEL[want]}`
     }
     stepKinds.push(OUTPUT_KIND[step.op])
   }
