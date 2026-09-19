@@ -162,3 +162,32 @@ export async function linearizePdf(file: File): Promise<OutputFile> {
     failure: 'This PDF could not be linearised',
   })
 }
+
+/**
+ * Rewrites the file from the trailer down. qpdf rebuilds the object table by
+ * walking what is actually reachable, so anything that was merely unlinked —
+ * a deleted annotation, a dropped attachment, an unhooked XMP packet — is not
+ * written out at all. pdf-lib alone cannot do this: it serialises every object
+ * ever registered, reachable or not.
+ */
+export async function collectGarbagePdf(file: File): Promise<OutputFile> {
+  return runQpdf({
+    file,
+    args: ['--object-streams=generate', '--remove-unreferenced-resources=yes'],
+    suffix: '-tidied',
+    failure: 'This PDF could not be rebuilt',
+  })
+}
+
+/**
+ * The same document with nothing compressed, so its bytes can be searched for
+ * a name that is supposed to be gone. Compressed streams would hide it.
+ */
+export async function expandPdf(file: File): Promise<OutputFile> {
+  return runQpdf({
+    file,
+    args: ['--stream-data=uncompress', '--object-streams=disable', '--decode-level=all'],
+    suffix: '-expanded',
+    failure: 'This PDF could not be expanded',
+  })
+}
