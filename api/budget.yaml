@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  A spending alarm for the Klyro account. Deployed on its own, not with the API,
+  because a budget covers the whole account and because creating one needs
+  billing permissions the API deploy does not have — a failure here should never
+  roll back a running API.
+
+Parameters:
+  AlertEmail:
+    Type: String
+    Description: Where to send the warning. AWS sends a confirmation mail first.
+    AllowedPattern: '[^@\s]+@[^@\s]+\.[^@\s]+'
+    ConstraintDescription: must be an email address
+
+  MonthlyLimit:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    Description: Monthly ceiling in USD. Klyro costs cents at demo scale; this is a tripwire, not a plan.
+
+Resources:
+  # Three notifications: half way, at the limit, and on a forecast that would
+  # pass it. The forecast one is what actually gives you time to react.
+  SpendAlarm:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub 'klyro-${AWS::AccountId}-monthly'
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: !Ref MonthlyLimit
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 50
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+
+Outputs:
+  BudgetName:
+    Description: The budget this stack owns
+    Value: !Ref SpendAlarm
