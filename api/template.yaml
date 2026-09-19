@@ -16,13 +16,28 @@ Parameters:
     Default: '0'
     AllowedValues: ['0', '1']
     Description: Set to 1 to use the keyword planner instead of Bedrock
+  MaxConcurrency:
+    Type: Number
+    Default: 0
+    MinValue: 0
+    Description: >
+      Planner runs allowed at once. Reserving concurrency is only possible on an
+      account with room to spare above the minimum AWS keeps unreserved, and
+      this one has a limit of 10, so the default is off and the ceiling comes
+      from the API throttle below instead.
+
+Conditions:
+  # Reserving concurrency fails on accounts whose unreserved pool would fall
+  # below the minimum AWS insists on keeping, so it has to be optional.
+  CapConcurrency: !Not [!Equals [!Ref MaxConcurrency, 0]]
 
 Globals:
   Function:
     Runtime: nodejs22.x
     Architectures: [arm64]
     MemorySize: 256
-    Timeout: 30
+    # the planner answers in a few seconds or not at all; 30 s just bills longer
+    Timeout: 15
 
 Resources:
   PlanApi:
@@ -33,9 +48,11 @@ Resources:
         AllowMethods: [POST, OPTIONS]
         AllowHeaders: [content-type]
         MaxAge: 600
+      # the only ceiling available on this account, so it is the tighter one:
+      # a person typing an instruction never notices, a loop gets 429s
       DefaultRouteSettings:
-        ThrottlingRateLimit: 5
-        ThrottlingBurstLimit: 10
+        ThrottlingRateLimit: 2
+        ThrottlingBurstLimit: 5
 
   PlanFunction:
     Type: AWS::Serverless::Function
@@ -43,6 +60,10 @@ Resources:
       Handler: plan.handler
       # dist/ is produced by `npm run bundle` (esbuild); nothing else ships to Lambda
       CodeUri: dist/
+      # The endpoint is public, and the cost of abusing it would be Bedrock
+      # tokens rather than pennies. Two at a time is plenty for a person using
+      # the command bar and caps a flood at roughly one request a second.
+      ReservedConcurrentExecutions: !If [CapConcurrency, !Ref MaxConcurrency, !Ref 'AWS::NoValue']
       LoggingConfig:
         LogGroup: !Ref PlanLogs
       Environment:
