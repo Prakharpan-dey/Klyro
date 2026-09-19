@@ -1,10 +1,11 @@
-import { PDFDocument } from 'pdf-lib'
+import { PDFDocument, degrees } from 'pdf-lib'
 import { describe, expect, it } from 'vitest'
 import {
   anchorPosition,
   assertLatin,
   fillTemplate,
   mmToPt,
+  placeImage,
   stampText,
   UnsupportedTextError,
 } from './stamp'
@@ -135,5 +136,69 @@ describe('stampText', () => {
         suffix: '-x',
       }),
     ).rejects.toThrow(/Latin/)
+  })
+})
+
+describe('placeImage', () => {
+  /** A page of a given size, optionally turned or cropped. */
+  async function sheet(width: number, height: number, turn = 0, origin = 0) {
+    const doc = await PDFDocument.create()
+    const p = doc.addPage([width, height])
+    if (turn) p.setRotation(degrees(turn))
+    if (origin) p.setCropBox(origin, origin, width, height)
+    return p
+  }
+
+  const round = (p: { x: number; y: number; width: number; height: number; rotate: number }) => ({
+    x: Math.round(p.x),
+    y: Math.round(p.y),
+    width: Math.round(p.width),
+    height: Math.round(p.height),
+    rotate: p.rotate,
+  })
+
+  it('covers the whole page when the box does', async () => {
+    expect(round(placeImage(await sheet(400, 600), { x: 0, y: 0, w: 1, h: 1 }))).toEqual({
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 600,
+      rotate: 0,
+    })
+  })
+
+  it('puts a top-left box at the top left, where the reader sees it', async () => {
+    // a quarter box at the top-left corner: in PDF space that is high up
+    const spot = round(placeImage(await sheet(400, 600), { x: 0, y: 0, w: 0.5, h: 0.5 }))
+    expect(spot).toEqual({ x: 0, y: 300, width: 200, height: 300, rotate: 0 })
+  })
+
+  it('puts a bottom-right box at the bottom right', async () => {
+    const spot = round(placeImage(await sheet(400, 600), { x: 0.5, y: 0.5, w: 0.5, h: 0.5 }))
+    expect(spot).toEqual({ x: 200, y: 0, width: 200, height: 300, rotate: 0 })
+  })
+
+  it('measures against the page as it is seen, not as it is stored', async () => {
+    // turned a quarter: the reader sees 600 wide by 400 tall
+    const spot = round(placeImage(await sheet(400, 600, 90), { x: 0, y: 0, w: 0.5, h: 0.5 }))
+    expect(spot.width).toBe(300)
+    expect(spot.height).toBe(200)
+    expect(spot.rotate).toBe(90)
+  })
+
+  it('turns the stamp with the page, so it never lands sideways', async () => {
+    for (const turn of [0, 90, 180, 270]) {
+      const spot = placeImage(await sheet(400, 600, turn), { x: 0.1, y: 0.1, w: 0.3, h: 0.2 })
+      expect(spot.rotate).toBe(turn)
+      expect(spot.x).toBeGreaterThanOrEqual(0)
+      expect(spot.y).toBeGreaterThanOrEqual(0)
+    }
+  })
+
+  it('follows a crop box that does not start at the corner', async () => {
+    const plain = placeImage(await sheet(400, 600), { x: 0.25, y: 0.25, w: 0.5, h: 0.5 })
+    const offset = placeImage(await sheet(400, 600, 0, 20), { x: 0.25, y: 0.25, w: 0.5, h: 0.5 })
+    expect(Math.round(offset.x - plain.x)).toBe(20)
+    expect(Math.round(offset.y - plain.y)).toBe(20)
   })
 })
