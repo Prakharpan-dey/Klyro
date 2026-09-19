@@ -45,7 +45,7 @@ Two behaviours worth knowing because most tools get them wrong:
 "We respect your privacy" is easy to write and hard to verify. Here is what makes it checkable in this repository:
 
 1. **There is no upload endpoint.** Images go through canvas and Web Workers; PDFs through pdf-lib and pdf.js; video through WebCodecs. Read `web/src/ops/` and you will not find a request that carries file bytes.
-2. **The planner only receives metadata.** The request body is the instruction plus, per file, its kind, mime type, size in KB, and page count or pixel size — about 200 bytes. File **names** are excluded unless you turn them on.
+2. **The planner only receives metadata.** The request body is the instruction plus, per file, its kind, mime type, size in KB, and whichever of page count, pixel size or duration applies — about 200 bytes. File **names** are excluded unless you turn them on. The status bar counts the exact bytes on every request.
 3. **The browser enforces it.** The site ships a Content-Security-Policy whose `connect-src` allows only the site itself and the planner API, so even a bug or a malicious dependency could not post a file elsewhere.
 4. **The server forgets.** The Lambda logs latency, file count, step count and token usage. It never logs the instruction or file names, and a test fails if either leaks.
 5. **Nothing is stored.** Staged files live in tab memory and disappear when the tab closes. Output is written only when you press save.
