@@ -32,6 +32,7 @@
     "dev": "vite",
     "prebuild": "node scripts/ocr-assets.mjs",
     "build": "tsc -b && vite build",
+    "postbuild": "node scripts/seo.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
     "format": "prettier --write .",

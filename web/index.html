@@ -10,15 +10,24 @@
       content="Compress, resize, convert, merge and split files without uploading them. Everything runs in your browser."
     />
     <title>Klyro — file tools that never upload your files</title>
+    <link rel="canonical" href="https://klyro.zeusdotdev.app/" />
 
-    <!-- shared links land on the landing page, so give them something to show -->
+    <!--
+      The fallback head. `scripts/seo.mjs` rewrites these per route at build
+      time, so a crawler on /tools/pdf-merge gets that page's own title. What is
+      here is what dev and any unlisted route serve.
+    -->
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Klyro" />
     <meta property="og:title" content="Klyro — file tools that never upload your files" />
     <meta
       property="og:description"
       content="56 image, PDF and video tools that run entirely in your browser. No account, no upload, and a live counter proving nothing left the tab."
     />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:url" content="https://klyro.zeusdotdev.app/" />
+    <meta property="og:image" content="https://klyro.zeusdotdev.app/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://klyro.zeusdotdev.app/og.png" />
   </head>
   <body>
     <div id="root"></div>
