@@ -1,20 +1,20 @@
-import { SheetFields } from '@/components/tool/SheetFields'
-import { useSheetParams } from '@/components/tool/useSheetParams'
+import { LayoutFields } from '@/components/tool/LayoutFields'
+import { useLayoutParams } from '@/components/tool/useLayoutParams'
 import { ToolLayout } from '@/components/tool/ToolLayout'
 import { useToolFiles } from '@/components/tool/useToolFiles'
 import { useFileJob } from '@/lib/useFileJob'
-import { excelToPdf } from '@/ops/office/excelToPdf'
+import { odtToPdf } from '@/ops/office/odfToPdf'
 import { meta } from './meta'
 
-export default function ExcelToPdfTool() {
+export default function OdtToPdfTool() {
   const files = useToolFiles(meta.accept, meta.multiple)
   const job = useFileJob()
-  const sheet = useSheetParams()
+  const layout = useLayoutParams()
 
   const run = () =>
     job.run(async (progress) => {
       const out = []
-      for (const file of files.list) out.push(await excelToPdf(file, sheet.params, progress))
+      for (const file of files.list) out.push(await odtToPdf(file, layout.params, progress))
       return out
     })
 
@@ -26,13 +26,13 @@ export default function ExcelToPdfTool() {
       compareSizes={false}
       runLabel="MAKE PDF"
       onRun={run}
-      footnote="Values as they are stored: no colours, no charts, no formulas"
+      footnote="Text, headings and lists — not the original page design"
       settings={
         <>
-          <SheetFields sheet={sheet} />
+          <LayoutFields layout={layout} />
           <p className="font-sans text-[12px] leading-relaxed text-faint">
-            Every sheet starts on a new page. Columns too wide for the paper are trimmed with an
-            ellipsis, so nothing silently runs off the edge.
+            The document is read for its text and laid out again here, so the result is clean but
+            will not match LibreOffice page for page. Images, tables and columns are left behind.
           </p>
         </>
       }
