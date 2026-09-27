@@ -1,21 +1,17 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useMemo, type ReactNode } from 'react'
 import { XIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 function Thumb({ file }: { file: File }) {
-  const img = useRef<HTMLImageElement>(null)
   const isImage = file.type.startsWith('image/')
-
-  useEffect(() => {
-    if (!isImage || !img.current) return
-    const url = URL.createObjectURL(file)
-    img.current.src = url
-    return () => URL.revokeObjectURL(url)
-  }, [file, isImage])
+  // derived during render, not assigned afterwards: an <img> that exists for
+  // even one paint without a src flashes the browser's broken-image glyph
+  const url = useMemo(() => (isImage ? URL.createObjectURL(file) : undefined), [file, isImage])
+  useEffect(() => () => void (url && URL.revokeObjectURL(url)), [url])
 
   return (
     <div className="stripes h-[34px] w-[26px] shrink-0 overflow-hidden border border-line">
-      {isImage && <img ref={img} alt="" className="size-full object-cover" />}
+      {url && <img src={url} alt="" className="size-full object-cover" />}
     </div>
   )
 }
