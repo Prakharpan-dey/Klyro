@@ -33,16 +33,19 @@ function CommandDialog({
   children,
   className,
   showCloseButton = false,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof Dialog> & {
   title?: string
   description?: string
   className?: string
   showCloseButton?: boolean
+  onCloseAutoFocus?: React.ComponentProps<typeof DialogContent>['onCloseAutoFocus']
 }) {
   return (
     <Dialog {...props}>
       <DialogContent
+        onCloseAutoFocus={onCloseAutoFocus}
         className={cn('top-1/3 translate-y-0 overflow-hidden rounded-none p-0', className)}
         showCloseButton={showCloseButton}
       >

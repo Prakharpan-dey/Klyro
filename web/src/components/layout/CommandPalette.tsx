@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import {
   CommandDialog,
@@ -17,10 +18,35 @@ interface CommandPaletteProps {
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const navigate = useNavigate()
+  const restoreTo = useRef<HTMLElement | null>(null)
+  const navigated = useRef(false)
+
+  // whatever held focus when the palette opened; Ctrl-K often fires with nothing
+  // focused, and Radix then hands focus back to <body>
+  useEffect(() => {
+    if (open) restoreTo.current = document.activeElement as HTMLElement | null
+  }, [open])
 
   const go = (to: string) => {
+    navigated.current = true
     onOpenChange(false)
     navigate(to)
+  }
+
+  /*
+   * Radix's own hook, rather than a rAF after onOpenChange: moving focus while
+   * the exit animation runs leaves Presence waiting for an animationend that
+   * never arrives, and the dialog stays mounted at data-state="closed".
+   */
+  const restoreFocus = (event: Event) => {
+    event.preventDefault()
+    if (navigated.current) {
+      navigated.current = false
+      return
+    }
+    const target = restoreTo.current
+    if (target && target !== document.body && document.contains(target)) target.focus()
+    else document.getElementById('work')?.focus()
   }
 
   return (
@@ -29,6 +55,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       onOpenChange={onOpenChange}
       title="Command palette"
       description="Jump to a tool"
+      onCloseAutoFocus={restoreFocus}
       /*
        * The shared dialog is sized for a short menu: sm:max-w-sm wraps these titles
        * onto two lines and truncates the summaries to nothing. Fifty-six tools with a
