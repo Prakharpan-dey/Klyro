@@ -9,4 +9,11 @@ export const meta: ToolMeta = {
   group: 'Pages',
   accept: PDF_ACCEPT,
   multiple: true,
+  seo: {
+    title: 'Merge Front and Back Scans — free | Klyro',
+    description:
+      'Interleave two PDFs of fronts and backs into one correctly ordered document, in your browser. Reverse the second file for a stack fed backwards. No upload.',
+    about:
+      'For a sheet-fed scanner with no duplex: you scan all the fronts, flip the stack, scan all the backs, and end up with two files in the wrong order. This weaves them together, and can read the second one backwards for a stack that went through reversed.',
+  },
 }

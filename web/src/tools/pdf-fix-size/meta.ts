@@ -9,4 +9,11 @@ export const meta: ToolMeta = {
   group: 'Pages',
   accept: PDF_ACCEPT,
   multiple: true,
+  seo: {
+    title: 'Resize PDF Pages to One Size | Klyro',
+    description:
+      'Put mixed page sizes onto one uniform paper size, centred, in your browser. Stops a printer choking on a document assembled from different sources.',
+    about:
+      'Documents built from several sources often mix A4, Letter and odd scan sizes, which printers handle badly. Every page is redrawn centred on the size you choose, with a margin you set. Nothing is uploaded and nothing is cropped.',
+  },
 }

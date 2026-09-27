@@ -141,6 +141,13 @@ export function ToolLayout({
 
         <Panel label="B · Settings" className="flex flex-col gap-5 self-stretch">
           <div className="flex flex-col gap-5">{settings}</div>
+          {/* the same paragraph the prerendered page carries, so what a search
+              result promises and what the tool says are one string */}
+          {meta.seo?.about && (
+            <p className="max-w-[62ch] font-sans text-[12.5px] leading-relaxed text-faint">
+              {meta.seo.about}
+            </p>
+          )}
           <div className="mt-auto flex flex-col gap-3">
             {footnote && (
               <div className="readout text-[10px] leading-relaxed text-local">{footnote}</div>

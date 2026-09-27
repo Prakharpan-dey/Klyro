@@ -9,4 +9,11 @@ export const meta: ToolMeta = {
   group: 'Pages',
   accept: PDF_ACCEPT,
   multiple: true,
+  seo: {
+    title: 'Split PDF Pages in Half — free | Klyro',
+    description:
+      'Cut each page of a PDF vertically, horizontally or into quarters. Useful for two-page scans of a book. Runs in your browser with nothing uploaded.',
+    about:
+      'The fix for a book scanned two pages at a time, or a sheet holding several tickets. Each page is divided where you say and the pieces become pages of their own, in reading order. All of it happens on your machine.',
+  },
 }
