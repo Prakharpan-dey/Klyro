@@ -21,7 +21,8 @@ function setMeta(selector: string, attr: 'name' | 'property', key: string, conte
  */
 export function useDocumentMeta({ title, description, path }: PageSeo) {
   useEffect(() => {
-    const url = `${SITE_URL}${path === '/' ? '' : path}`
+    // must match the sitemap entry exactly, trailing slash included
+    const url = `${SITE_URL}${path}`
     document.title = title
 
     setMeta('meta[name="description"]', 'name', 'description', description)

@@ -52,7 +52,9 @@ const escape = (s) =>
 
 /** Swaps the head of the built index.html for this route's own. */
 function render(template, { title, description, path, heading, body, jsonLd }) {
-  const url = `${SITE}${path === '/' ? '' : path}`
+  // the trailing slash matters: this has to match the sitemap entry exactly,
+  // or Search Console reports the canonical as pointing somewhere else
+  const url = `${SITE}${path}`
   const head = [
     `<title>${escape(title)}</title>`,
     `<meta name="description" content="${escape(description)}" />`,
