@@ -20,6 +20,7 @@ export function SignaturePad({ onChange }: SignaturePadProps) {
     ctx.lineWidth = 3
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
+    // ink, not theme: this colour is baked into the exported signature
     ctx.strokeStyle = '#0b1220'
   }, [])
 

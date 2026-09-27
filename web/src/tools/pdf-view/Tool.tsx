@@ -161,7 +161,7 @@ export default function ViewPdfTool() {
             <div
               ref={holder}
               className={cn(
-                'mt-3.5 flex max-h-[70vh] items-start justify-center overflow-auto border border-line-soft bg-[#0b1526] p-4',
+                'mt-3.5 flex max-h-[70vh] items-start justify-center overflow-auto border border-line-soft bg-raised p-4',
                 !pageCount && 'min-h-40',
               )}
             />

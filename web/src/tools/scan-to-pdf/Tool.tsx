@@ -90,7 +90,7 @@ export default function ScanToPdfTool() {
       }
     >
       <div className="mt-3.5 flex flex-col gap-3">
-        <div className="relative overflow-hidden border border-line-soft bg-[#0b1526]">
+        <div className="relative overflow-hidden border border-line-soft bg-raised">
           <video
             ref={video}
             playsInline

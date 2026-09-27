@@ -75,7 +75,7 @@ function Card({
         {...listeners}
         disabled={disabled}
         aria-label={`Page ${page.index + 1}, position ${position}. Drag to move.`}
-        className="relative flex aspect-[3/4] cursor-grab touch-none items-center justify-center overflow-hidden bg-[#0b1526] p-2 active:cursor-grabbing"
+        className="relative flex aspect-[3/4] cursor-grab touch-none items-center justify-center overflow-hidden bg-raised p-2 active:cursor-grabbing"
       >
         {thumb ? (
           <img

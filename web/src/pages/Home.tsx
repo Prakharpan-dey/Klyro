@@ -54,7 +54,7 @@ function InstructionPanel({
 
       <form
         onSubmit={submit}
-        className="mt-6 flex items-stretch border border-primary bg-[#060d19] shadow-[0_0_0_3px_rgba(77,184,255,.1)] focus-within:shadow-[0_0_0_3px_rgba(77,184,255,.25)]"
+        className="mt-6 flex items-stretch border border-primary bg-sunken shadow-[0_0_0_3px_rgba(77,184,255,.1)] focus-within:shadow-[0_0_0_3px_rgba(77,184,255,.25)]"
       >
         <span className="flex items-center border-r border-line bg-primary/15 px-[13px] text-[13px] font-semibold text-primary">
           ›
