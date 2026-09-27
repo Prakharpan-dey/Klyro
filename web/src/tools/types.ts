@@ -45,7 +45,17 @@ export const VIDEO_ACCEPT = [
 export const SHEET_ACCEPT = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-excel',
+  'text/csv',
 ]
+export const DOCX_ACCEPT = [
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]
+export const ODT_ACCEPT = ['application/vnd.oasis.opendocument.text']
+export const ODS_ACCEPT = ['application/vnd.oasis.opendocument.spreadsheet']
+export const EPUB_ACCEPT = ['application/epub+zip']
+export const ZIP_ACCEPT = ['application/zip', 'application/x-zip-compressed']
+export const HTML_ACCEPT = ['text/html', 'application/xhtml+xml']
+export const RTF_ACCEPT = ['application/rtf', 'text/rtf']
 export const IMAGE_ACCEPT = [
   'image/jpeg',
   'image/png',
