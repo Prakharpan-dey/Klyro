@@ -20,6 +20,38 @@ type Planner = ReturnType<typeof usePlanner>
 
 const examples = ['Compress to 200 KB', 'Merge + drop page 2', 'All → WebP']
 
+/**
+ * One polite channel for the console.
+ *
+ * Every signal this surface gives is visual — a skeleton, a progress bar, a
+ * list appearing — and none of it reaches a screen reader. The round trip to
+ * the planner is the whole interaction, so its phases are said in words.
+ */
+function StatusAnnouncer({ planner }: { planner: Planner }) {
+  const { phase, plan, steps, results } = planner
+  const count = plan?.steps.length ?? 0
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
+
+  let message = ''
+  if (phase === 'planning') message = 'Planning the job'
+  else if (phase === 'planned' && plan) {
+    message = count
+      ? `Plan ready, ${plural(count, 'step')}. ${plan.summary}`
+      : `No plan. ${plan.clarification ?? ''}`
+  } else if (phase === 'running') {
+    const done = steps.filter((s) => s?.status === 'done').length
+    message = `Running ${plural(count, 'step')}, ${done} finished`
+  } else if (phase === 'done') {
+    message = `Finished. ${plural(results.length, 'file')} ready to save.`
+  }
+
+  return (
+    <p role="status" aria-live="polite" className="sr-only">
+      {message}
+    </p>
+  )
+}
+
 function InstructionPanel({
   planner,
   inputRef,
@@ -209,7 +241,10 @@ function PlanPanel({ planner, onEdit }: { planner: Planner; onEdit: () => void }
       )}
 
       {phase === 'error' && !plan && (
-        <div className="mt-3.5 border border-destructive/40 bg-well px-3 py-4 font-sans text-[12.5px] text-destructive">
+        <div
+          role="alert"
+          className="mt-3.5 border border-destructive/40 bg-well px-3 py-4 font-sans text-[12.5px] text-destructive"
+        >
           {error}
         </div>
       )}
@@ -321,7 +356,9 @@ function RunPanel({ planner }: { planner: Planner }) {
         )}
       </div>
       {phase === 'error' && plan && error && (
-        <p className="mt-2 font-sans text-[12px] text-destructive">{error}</p>
+        <p role="alert" className="mt-2 font-sans text-[12px] text-destructive">
+          {error}
+        </p>
       )}
     </Panel>
   )
@@ -399,6 +436,7 @@ export function Home() {
           : "[grid-template-areas:'a'_'b'_'c'_'d'_'e'] md:[grid-template-areas:'a_a'_'b_b'_'c_c'_'d_e'] xl:[grid-template-areas:'a_b'_'c_b'_'d_e']",
       )}
     >
+      <StatusAnnouncer planner={planner} />
       <InstructionPanel planner={planner} inputRef={inputRef} />
       <IntakePanel locked={planner.phase === 'running'} />
       <PlanPanel planner={planner} onEdit={() => inputRef.current?.focus()} />
