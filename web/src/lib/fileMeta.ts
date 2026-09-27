@@ -24,13 +24,33 @@ export function kindOf(file: File): FileKind {
   return 'other'
 }
 
+/**
+ * The extension to fall back on when a mime type is missing or wrong.
+ *
+ * Document formats are where this bites: Windows reports .epub and .rtf with an
+ * empty type often enough that matching on mime alone silently rejects the file
+ * the user just dropped, with no way for them to tell why.
+ */
+const EXTENSIONS: Record<string, RegExp> = {
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': /\.docx$/i,
+  'application/vnd.oasis.opendocument.text': /\.odt$/i,
+  'application/vnd.oasis.opendocument.spreadsheet': /\.ods$/i,
+  'application/epub+zip': /\.epub$/i,
+  'application/zip': /\.zip$/i,
+  'application/rtf': /\.rtf$/i,
+  'text/html': /\.x?html?$/i,
+  'text/csv': /\.csv$/i,
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': /\.xlsx$/i,
+}
+
 export function matchesAccept(file: File, accept: string[]): boolean {
   return accept.some((a) => {
     if (a.endsWith('/*')) return file.type.startsWith(a.slice(0, -1))
     // some systems hand over PDFs with an empty mime type
     if (a === 'application/pdf') return kindOf(file) === 'pdf'
     if (a.startsWith('video/') && !file.type) return kindOf(file) === 'video'
-    return file.type === a
+    if (file.type === a) return true
+    return EXTENSIONS[a]?.test(file.name) ?? false
   })
 }
 

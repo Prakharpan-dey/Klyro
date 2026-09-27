@@ -50,6 +50,8 @@ export interface TextPiece {
   x: number
   y: number
   width: number
+  /** cap height of the run, for callers that need to draw over it */
+  height: number
 }
 
 /** Positioned text runs of one page, for callers that need the layout back. */
@@ -58,13 +60,14 @@ export async function extractPageItems(doc: PDFDocumentProxy, index: number): Pr
   const content = await page.getTextContent()
   const pieces: TextPiece[] = []
 
-  for (const item of content.items as (TextItemish & { width?: number })[]) {
+  for (const item of content.items as (TextItemish & { width?: number; height?: number })[]) {
     if (typeof item.str !== 'string' || !item.str.trim()) continue
     pieces.push({
       str: item.str,
       x: item.transform?.[4] ?? 0,
       y: item.transform?.[5] ?? 0,
       width: item.width ?? 0,
+      height: item.height || Math.abs(item.transform?.[3] ?? 0) || 10,
     })
   }
 
