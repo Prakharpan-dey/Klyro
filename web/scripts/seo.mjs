@@ -22,6 +22,8 @@ const dist = join(web, 'dist')
 
 const SITE = 'https://klyro.zeusdotdev.app'
 const OG_IMAGE = `${SITE}/og.png`
+const OG_IMAGE_ALT =
+  'Klyro: your files never leave this tab. Counters reading zero off-origin requests and zero file bytes sent.'
 
 /** Reads the string literals out of a meta.ts without importing TypeScript. */
 function readMeta(slug) {
@@ -65,6 +67,12 @@ function render(template, { title, description, path, heading, body, jsonLd }) {
     `<meta property="og:description" content="${escape(description)}" />`,
     `<meta property="og:url" content="${url}" />`,
     `<meta property="og:image" content="${OG_IMAGE}" />`,
+    // declared so a crawler can pick the large card without fetching the file
+    // first; several of them default to a small thumbnail otherwise
+    `<meta property="og:image:width" content="1200" />`,
+    `<meta property="og:image:height" content="630" />`,
+    `<meta property="og:image:type" content="image/png" />`,
+    `<meta property="og:image:alt" content="${escape(OG_IMAGE_ALT)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
     `<meta name="twitter:title" content="${escape(title)}" />`,
     `<meta name="twitter:description" content="${escape(description)}" />`,
