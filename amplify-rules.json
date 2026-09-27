@@ -1,0 +1,22 @@
+[
+  {
+    "source": "/tools/<*>",
+    "target": "/tools/<*>.html",
+    "status": "200"
+  },
+  {
+    "source": "/console",
+    "target": "/console.html",
+    "status": "200"
+  },
+  {
+    "source": "/privacy",
+    "target": "/privacy.html",
+    "status": "200"
+  },
+  {
+    "source": "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|xml|svg|woff|woff2|ttf|map|json|webp|mjs)$)([^.]+$)/>",
+    "target": "/index.html",
+    "status": "200"
+  }
+]

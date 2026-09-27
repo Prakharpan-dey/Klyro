@@ -90,8 +90,14 @@ function render(template, { title, description, path, heading, body, jsonLd }) {
 
 const template = readFileSync(join(dist, 'index.html'), 'utf8')
 
+/*
+ * Routes are written as <path>.html, not <path>/index.html.
+ * Amplify rejects a rewrite whose target puts a wildcard before a slash
+ * ("/tools/<*>/index.html"), so the one rule that covers all 56 tools has to
+ * end in an extension. See amplify-rules.json.
+ */
 const write = (path, html) => {
-  const file = path === '/' ? join(dist, 'index.html') : join(dist, path, 'index.html')
+  const file = path === '/' ? join(dist, 'index.html') : join(dist, `${path}.html`)
   mkdirSync(dirname(file), { recursive: true })
   writeFileSync(file, html)
 }
