@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react'
 import { Panel } from '@/components/console/Panel'
 import { Button } from '@/components/ui/button'
@@ -46,6 +46,7 @@ export function PagePlacer({
   const [pages, setPages] = useState(0)
   const [ratio, setRatio] = useState(1)
   const [error, setError] = useState<string>()
+  const hintId = useId()
 
   // one document, held open for the life of the panel: reopening per render is
   // what makes page flipping feel slow
@@ -225,12 +226,12 @@ export function PagePlacer({
         <span className="readout text-[10px] text-faint">
           X {Math.round(box.x * 100)}% · Y {Math.round(box.y * 100)}% · W {Math.round(box.w * 100)}%
         </span>
-        <span className="ml-auto readout text-[10px] text-faint">
+        <span id={hintId} className="ml-auto readout text-[10px] text-faint">
           Drag it · corner to resize · arrows to nudge
         </span>
       </div>
 
-      <div className="mt-3 flex justify-center border border-line-soft bg-[#0b1526] p-4">
+      <div className="mt-3 flex justify-center border border-line-soft bg-raised p-4">
         <div className="relative w-full max-w-[760px]" style={{ aspectRatio: ratio || 0.7071 }}>
           {/* the canvas gets its own layer: replacing its children must not
               touch the overlay React renders on top */}
@@ -238,9 +239,11 @@ export function PagePlacer({
           <div ref={overlay} className="absolute inset-0 touch-none">
             {src && (
               <div
-                role="group"
+                role="application"
                 tabIndex={0}
                 aria-label="Signature position"
+                aria-roledescription="Draggable signature box"
+                aria-describedby={hintId}
                 onPointerDown={startDrag}
                 onKeyDown={onKeyDown}
                 className="absolute cursor-move border border-primary bg-primary/10 outline-none focus-visible:ring-2 focus-visible:ring-primary"

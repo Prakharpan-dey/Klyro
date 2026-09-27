@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 interface PanelProps {
@@ -11,9 +11,11 @@ interface PanelProps {
 }
 
 export function Panel({ id, label, meta, className, tone = 'default', children }: PanelProps) {
+  const labelId = useId()
   return (
     <section
       id={id}
+      aria-labelledby={labelId}
       className={cn(
         'min-w-0 border border-line p-[18px]',
         tone === 'deep' ? 'bg-panel' : 'bg-card',
@@ -21,7 +23,13 @@ export function Panel({ id, label, meta, className, tone = 'default', children }
       )}
     >
       <header className="flex items-baseline justify-between gap-3">
-        <h2 className="label">{label}</h2>
+        {/*
+         * A named region, not a heading: these labels are panel chrome, and as
+         * headings they landed above the page's own h1 in the outline.
+         */}
+        <div id={labelId} className="label">
+          {label}
+        </div>
         {meta && <div className="readout text-[10px] leading-none font-medium">{meta}</div>}
       </header>
       {children}

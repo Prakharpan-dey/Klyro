@@ -26,11 +26,18 @@ export function AppShell() {
 
   return (
     <div className="flex min-h-dvh flex-col">
+      {/*
+       * The rail is 57 tab stops wide. Without this, reaching the tool you
+       * already chose means traversing every other tool first, on every page.
+       */}
+      <a href="#work" className="skip-link">
+        Skip to content
+      </a>
       <TopBar onOpenPalette={() => setPaletteOpen(true)} />
       <div className="flex min-h-0 flex-1">
         <ToolNav />
         {/* min-w-0 keeps the tool grids from pushing the console wider than the viewport */}
-        <main className="min-w-0 flex-1 p-3 sm:p-6">
+        <main id="work" tabIndex={-1} className="min-w-0 flex-1 p-3 sm:p-6">
           {/* the rail already eats the left edge, so the work only needs centring past it */}
           <div className="mx-auto max-w-[1440px]">
             <Outlet />

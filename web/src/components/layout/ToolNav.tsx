@@ -71,7 +71,7 @@ export function ToolNavBody() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Filter…"
           aria-label="Filter tools"
-          className="h-8 w-full border border-line bg-well px-2 font-mono text-[11px] text-foreground outline-none placeholder:text-faint focus:border-primary"
+          className="h-8 w-full border border-line-strong bg-well px-2 font-mono text-[11px] text-foreground outline-none placeholder:text-faint focus:border-primary"
         />
       </div>
 
@@ -104,7 +104,10 @@ export function ToolNavBody() {
 
 export function ToolNav() {
   return (
-    <aside className="hidden w-[212px] shrink-0 border-r border-line bg-panel lg:block xl:w-[244px]">
+    <aside
+      aria-label="Tools"
+      className="hidden w-[212px] shrink-0 border-r border-line bg-panel lg:block xl:w-[244px]"
+    >
       {/*
        * Sticky between the two pinned bars. The height cap has to allow for both
        * (44px + 36px): this list is long enough to reach its cap, so the cap is

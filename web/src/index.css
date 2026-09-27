@@ -39,11 +39,15 @@
   --color-well: var(--well);
   --color-line: var(--line);
   --color-line-soft: var(--line-soft);
+  --color-line-strong: var(--line-strong);
   --color-soft: var(--text-soft);
   --color-dim: var(--text-dim);
   --color-faint: var(--text-faint);
   --color-local: var(--local);
   --color-egress: var(--egress);
+  --color-primary-hover: var(--primary-hover);
+  --color-raised: var(--raised);
+  --color-sunken: var(--sunken);
 
   --radius-sm: 0;
   --radius-md: 0;
@@ -52,18 +56,6 @@
   --radius-2xl: 0;
   --radius-3xl: 0;
   --radius-4xl: 0;
-
-  --animate-caret: caret 1.05s steps(2, end) infinite;
-
-  @keyframes caret {
-    0%,
-    100% {
-      opacity: 0.12;
-    }
-    50% {
-      opacity: 1;
-    }
-  }
 }
 
 :root,
@@ -90,8 +82,14 @@
 
   --panel: #08111f;
   --well: #070d18;
+  --raised: #0b1526;
+  --sunken: #060d19;
   --line: #1e4874;
   --line-soft: #12283f;
+  /* the boundary of a control has to clear 3:1 on its own (WCAG 1.4.11);
+     --line stays where it is only ruling panels apart */
+  --line-strong: #326ea6;
+  --primary-hover: #9ad6ff;
   --text-soft: #8fa9c6;
   --text-dim: #82a0c2;
   --text-faint: #6f8bb0;
@@ -136,13 +134,47 @@
     border: 2px solid var(--well);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #2f6ba8;
+    background: var(--line-strong);
   }
   ::-webkit-scrollbar-corner {
     background: var(--well);
   }
   a {
-    @apply text-primary transition-colors hover:text-[#9ad6ff];
+    @apply text-primary transition-colors hover:text-primary-hover;
+  }
+}
+
+@layer base {
+  /*
+   * Reduced motion removes travel, not feedback. Colour and opacity still
+   * change at a shortened duration, so hover, focus and status remain legible;
+   * only transforms collapse, because those are the part that induces symptoms.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 80ms !important;
+      transition-property: color, background-color, border-color, fill, stroke, opacity !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /*
+   * Parked off-screen rather than hidden with sr-only: `focus:not-sr-only`
+   * leaves clip-path in place, so the link stayed a 1px box even while focused.
+   * Moving it by position has no cascade to lose.
+   */
+  .skip-link {
+    @apply absolute top-2 z-50 border border-primary bg-card px-4 py-2 text-[12px] tracking-[0.1em] text-primary uppercase;
+    left: -9999px;
+  }
+  .skip-link:focus {
+    left: 0.5rem;
   }
 }
 
