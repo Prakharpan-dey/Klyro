@@ -1,10 +1,14 @@
 import { Link, NavLink } from 'react-router'
+import { CoffeeIcon } from '@phosphor-icons/react'
 import { SUPPORT_URL } from '@/lib/links'
 import { cn } from '@/lib/utils'
 
 export function Logo({ to = '/console' }: { to?: string }) {
   return (
-    <Link to={to} className="flex items-center gap-[13px] text-foreground hover:text-foreground">
+    <Link
+      to={to}
+      className="flex items-center gap-[13px] py-1.5 text-foreground hover:text-foreground"
+    >
       <span className="size-4 border border-primary bg-primary/25" aria-hidden />
       <span className="text-[12.5px] leading-none font-semibold tracking-[0.22em]">KLYRO</span>
       {/* decorative, and the first thing to go: the nav needs the room below lg */}
@@ -15,17 +19,25 @@ export function Logo({ to = '/console' }: { to?: string }) {
   )
 }
 
+/* 11px type leaves a 11px box, so the padding is what carries these to the 24px
+   minimum target size rather than the text. */
+const hit = 'inline-flex items-center px-1.5 py-[7px]'
+
 const navClass = ({ isActive }: { isActive: boolean }) =>
-  cn('text-faint hover:text-foreground', isActive && 'text-foreground')
+  cn(hit, 'text-faint hover:text-foreground', isActive && 'text-foreground')
 
 export function TopBar({ onOpenPalette }: { onOpenPalette: () => void }) {
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
   return (
     <header className="sticky top-0 z-20 flex h-11 shrink-0 items-center justify-between border-b border-line bg-card px-[18px]">
       <Logo />
-      <nav className="flex items-center gap-[18px] text-[11px] leading-none tracking-[0.1em]">
+      <nav className="flex items-center gap-2.5 text-[11px] leading-none tracking-[0.1em]">
         {/* on a phone there is no rail and no Ctrl-K, so this is the way in */}
-        <button type="button" onClick={onOpenPalette} className="text-faint hover:text-foreground">
+        <button
+          type="button"
+          onClick={onOpenPalette}
+          className={cn(hit, 'text-faint hover:text-foreground')}
+        >
           TOOLS
         </button>
         <NavLink to="/privacy" className={navClass}>
@@ -37,17 +49,18 @@ export function TopBar({ onOpenPalette }: { onOpenPalette: () => void }) {
             href={SUPPORT_URL}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 text-faint hover:text-foreground"
+            className={cn(hit, 'gap-1.5 text-faint hover:text-foreground')}
             title="Buy me a coffee"
           >
-            <span aria-hidden>☕</span>
+            <CoffeeIcon className="size-[15px]" weight="regular" aria-hidden />
             <span className="hidden sm:inline">BUY ME A COFFEE</span>
+            <span className="sr-only sm:hidden">Buy me a coffee</span>
           </a>
         )}
         <button
           type="button"
           onClick={onOpenPalette}
-          className="border border-line px-[7px] py-[5px] text-[#9ad6ff] transition-colors hover:border-primary"
+          className="inline-flex items-center border border-line-strong px-[7px] py-[6px] text-primary-hover transition-colors hover:border-primary"
           aria-label="Open command palette"
         >
           {isMac ? '⌘K' : 'CTRL K'}

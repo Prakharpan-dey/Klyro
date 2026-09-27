@@ -38,8 +38,8 @@ export function Dropzone({ onFiles, accept, multiple = true, className, hint }: 
       onDragLeave={() => setOver(false)}
       onDrop={onDrop}
       className={cn(
-        'flex min-h-24 cursor-pointer flex-col items-center justify-center border border-dashed border-line p-4 text-center readout leading-relaxed text-dim transition-colors outline-none',
-        'hover:border-primary/70 hover:bg-primary/5 focus-visible:border-primary focus-visible:bg-primary/5',
+        'flex min-h-24 cursor-pointer flex-col items-center justify-center border border-dashed border-line-strong p-4 text-center readout leading-relaxed text-dim transition-colors outline-none',
+        'hover:border-primary/70 hover:bg-primary/5 focus-visible:border-primary focus-visible:bg-primary/5 focus-visible:ring-2 focus-visible:ring-primary/60',
         over && 'border-primary bg-primary/10 text-foreground',
         className,
       )}

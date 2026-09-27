@@ -1,4 +1,5 @@
 import { useNavigate, Link } from 'react-router'
+import { CoffeeIcon } from '@phosphor-icons/react'
 import { Dropzone } from '@/components/console/Dropzone'
 import { Logo } from '@/components/layout/TopBar'
 import { useTelemetry } from '@/features/telemetry/useTelemetry'
@@ -106,13 +107,16 @@ export function Landing() {
       <header className="sticky top-0 z-20 border-b border-line bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[1120px] items-center justify-between px-5 sm:px-8">
           <Logo to="/" />
-          <nav className="flex items-center gap-5 text-[11px] leading-none tracking-[0.1em]">
-            <Link to="/privacy" className="text-faint hover:text-foreground">
+          <nav className="flex items-center gap-2 text-[11px] leading-none tracking-[0.1em]">
+            <Link
+              to="/privacy"
+              className="inline-flex items-center px-2 py-[7px] text-faint hover:text-foreground"
+            >
               PRIVACY
             </Link>
             <Link
               to="/console"
-              className="border border-primary px-3 py-2 text-[#9ad6ff] transition-colors hover:bg-primary/12"
+              className="inline-flex items-center border border-primary px-3 py-2.5 text-primary-hover transition-colors hover:bg-primary/12"
             >
               OPEN CONSOLE →
             </Link>
@@ -137,7 +141,7 @@ export function Landing() {
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               to="/console"
-              className="border border-primary bg-primary/12 px-6 py-3.5 text-center text-[12px] leading-none tracking-[0.14em] text-[#9ad6ff] uppercase transition-colors hover:bg-primary/20"
+              className="border border-primary bg-primary/12 px-6 py-3.5 text-center text-[12px] leading-none tracking-[0.14em] text-primary-hover uppercase transition-colors hover:bg-primary/20"
             >
               Open the console
             </Link>
@@ -206,19 +210,21 @@ export function Landing() {
                   <h3 className="label text-[10px] text-foreground">{group}</h3>
                   <span className="readout text-[10px] text-primary">{list.length}</span>
                 </div>
-                <ul className="mt-3 space-y-1.5">
+                <ul className="mt-2 -mx-2">
                   {list.slice(0, 5).map((t) => (
                     <li key={t.slug}>
                       <Link
                         to={`/tools/${t.slug}`}
-                        className="font-sans text-[13px] text-soft hover:text-foreground"
+                        className="block px-2 py-[5px] font-sans text-[13px] leading-[1.15] text-soft transition-colors hover:bg-primary/8 hover:text-foreground"
                       >
                         {t.title}
                       </Link>
                     </li>
                   ))}
                   {list.length > 5 && (
-                    <li className="readout text-[10px] text-faint">+{list.length - 5} more</li>
+                    <li className="readout px-2 pt-2 text-[10px] text-faint">
+                      +{list.length - 5} more
+                    </li>
                   )}
                 </ul>
               </div>
@@ -243,9 +249,9 @@ export function Landing() {
                 href={SUPPORT_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-6 flex shrink-0 items-center justify-center gap-2.5 border border-primary bg-primary/12 px-6 py-3.5 text-[12px] leading-none tracking-[0.14em] text-[#9ad6ff] uppercase transition-colors hover:bg-primary/20 sm:mt-0"
+                className="mt-6 flex shrink-0 items-center justify-center gap-2.5 border border-primary bg-primary/12 px-6 py-3.5 text-[12px] leading-none tracking-[0.14em] text-primary-hover uppercase transition-colors hover:bg-primary/20 sm:mt-0"
               >
-                <span aria-hidden>☕</span>
+                <CoffeeIcon className="size-[17px]" weight="regular" aria-hidden />
                 Buy me a coffee
               </a>
             </div>
@@ -259,12 +265,18 @@ export function Landing() {
             <span className="size-[7px] bg-local" aria-hidden />
             <span>Egress · 0 B file data · all processing local</span>
           </div>
-          <div className="flex items-center gap-5 text-dim">
-            <Link to="/privacy" className="text-dim hover:text-foreground">
+          <div className="-mr-2 flex items-center text-dim">
+            <Link
+              to="/privacy"
+              className="inline-flex items-center px-2 py-[7px] text-dim hover:text-foreground"
+            >
               Privacy
             </Link>
             {/* the support card sits directly above this: one ask is enough */}
-            <Link to="/console" className="text-dim hover:text-foreground">
+            <Link
+              to="/console"
+              className="inline-flex items-center px-2 py-[7px] text-dim hover:text-foreground"
+            >
               Console
             </Link>
           </div>
