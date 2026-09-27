@@ -83,9 +83,15 @@ function render(template, { title, description, path, heading, body, jsonLd }) {
     .replace(/\s*<link\s+rel="canonical"[\s\S]*?\/>/g, '')
     .replace('</head>', `  ${head}\n  </head>`)
 
-  // seeded so a crawler that never runs the bundle still reads something;
-  // React discards this the moment it mounts
-  const seed = `<h1>${escape(heading)}</h1><p>${escape(body)}</p>`
+  // Seeded so a crawler that never runs the bundle still reads something.
+  // Off-screen rather than visible: the browser paints this the moment the HTML
+  // arrives and React only replaces it once the bundle has parsed, which showed
+  // up as a flash of the wrong page on every cold load. Positioned away rather
+  // than display:none, which search engines discount.
+  const seed =
+    `<div style="position:absolute;left:-9999px;top:0;width:1px;height:1px;overflow:hidden">` +
+    `<h1>${escape(heading)}</h1><p>${escape(body)}</p>` +
+    `</div>`
   html = html.replace('<div id="root"></div>', `<div id="root">${seed}</div>`)
   return html
 }
