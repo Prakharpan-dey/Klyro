@@ -1,4 +1,6 @@
 import { useNavigate, Link } from 'react-router'
+import { PAGE_SEO } from '@/lib/seo'
+import { useDocumentMeta } from '@/lib/useDocumentMeta'
 import { CoffeeIcon } from '@phosphor-icons/react'
 import { Dropzone } from '@/components/console/Dropzone'
 import { Logo } from '@/components/layout/TopBar'
@@ -93,6 +95,7 @@ const guarantees = [
 ]
 
 export function Landing() {
+  useDocumentMeta(PAGE_SEO['/'])
   const navigate = useNavigate()
   const { add } = useWorkspace()
 

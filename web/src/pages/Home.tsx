@@ -1,4 +1,6 @@
 import { useRef, useState, type FormEvent, type RefObject } from 'react'
+import { PAGE_SEO } from '@/lib/seo'
+import { useDocumentMeta } from '@/lib/useDocumentMeta'
 import { Dropzone } from '@/components/console/Dropzone'
 import { describeMeta } from '@/components/console/describeMeta'
 import { FileRow } from '@/components/console/FileRow'
@@ -422,6 +424,7 @@ function OutputPanel({ planner }: { planner: Planner }) {
 }
 
 export function Home() {
+  useDocumentMeta(PAGE_SEO['/console'])
   const planner = usePlanner()
   const inputRef = useRef<HTMLInputElement>(null)
   const hasOutput = planner.phase === 'done' && planner.results.length > 0

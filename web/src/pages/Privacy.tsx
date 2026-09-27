@@ -1,4 +1,6 @@
 import { Panel } from '@/components/console/Panel'
+import { PAGE_SEO } from '@/lib/seo'
+import { useDocumentMeta } from '@/lib/useDocumentMeta'
 
 const points = [
   {
@@ -28,6 +30,7 @@ const points = [
 ]
 
 export function Privacy() {
+  useDocumentMeta(PAGE_SEO['/privacy'])
   return (
     <div className="flex flex-col gap-3.5">
       <div className="max-w-[76ch] border-l border-line pl-5">
