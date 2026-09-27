@@ -43,6 +43,12 @@ export default defineConfig({
     },
   },
   build: {
+    /*
+     * The app chunk is large on purpose: 56 tools share one graph and it is
+     * fetched only once a file is staged, never on the landing page. Raised
+     * rather than left warning, so a real regression still shows up here.
+     */
+    chunkSizeWarningLimit: 600,
     rolldownOptions: {
       output: {
         /*
