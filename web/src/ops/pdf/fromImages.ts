@@ -1,4 +1,5 @@
 import type { OutputFile, Progress } from '../types'
+import { jpegOrientation } from '../image/exif'
 import { runTransform } from '../image/pool'
 import { pdfLib, savePdf } from './load'
 
@@ -19,7 +20,15 @@ const SIZES: Record<Exclude<PageSize, 'fit'>, [number, number]> = {
 }
 
 async function embeddableBytes(file: File): Promise<{ bytes: ArrayBuffer; kind: 'jpg' | 'png' }> {
-  if (file.type === 'image/jpeg') return { bytes: await file.arrayBuffer(), kind: 'jpg' }
+  if (file.type === 'image/jpeg') {
+    const bytes = await file.arrayBuffer()
+    // Passed through untouched only when it is already the right way up. A
+    // PDF ignores EXIF orientation, so a rotated phone photo is re-encoded,
+    // which turns its pixels to match how every browser and phone shows it.
+    if (jpegOrientation(new Uint8Array(bytes)) === 1) return { bytes, kind: 'jpg' }
+    const r = await runTransform(file, { format: 'image/jpeg', quality: 0.92 })
+    return { bytes: await r.blob.arrayBuffer(), kind: 'jpg' }
+  }
   if (file.type === 'image/png') return { bytes: await file.arrayBuffer(), kind: 'png' }
   // pdf-lib only embeds JPEG and PNG, so re-encode anything else first
   const r = await runTransform(file, { format: 'image/jpeg', quality: 0.92 })

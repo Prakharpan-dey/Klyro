@@ -308,6 +308,29 @@ export function readExifBytes(bytes: Uint8Array): ExifReport {
   }
 }
 
+/**
+ * The EXIF orientation of a JPEG, 1 when it has none.
+ *
+ * A phone stores a portrait photo as landscape pixels plus a tag saying
+ * "turn this before showing it". Browsers honour the tag; a PDF or a slide
+ * deck does not, so anything that embeds the raw bytes has to check this first
+ * or the photo lands on its side.
+ */
+export function jpegOrientation(bytes: Uint8Array): number {
+  if (containerOf(bytes) !== 'jpeg') return 1
+  for (const block of jpegBlocks(bytes)) {
+    if (!block.tiff) continue
+    const tiff = block.tiff
+    const order = ascii(tiff, 0, 2)
+    if (order !== 'II' && order !== 'MM') continue
+    const little = order === 'II'
+    if (u16(tiff, 2, little) !== 42) continue
+    const value = readIfd(tiff, u32(tiff, 4, little), little).get(0x0112)
+    if (typeof value === 'number' && value >= 1 && value <= 8) return value
+  }
+  return 1
+}
+
 export async function readExif(file: File): Promise<ExifReport> {
   return readExifBytes(new Uint8Array(await file.arrayBuffer()))
 }

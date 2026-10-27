@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { containerOf, readExifBytes, stripExifBytes } from './exif'
+import { containerOf, jpegOrientation, readExifBytes, stripExifBytes } from './exif'
 
 /**
  * Fixtures are built by hand rather than checked in as photos: a real holiday
@@ -233,5 +233,50 @@ describe('stripExifBytes', () => {
     expect(readExifBytes(clean).findings).toEqual([])
     expect(new TextDecoder('latin1').decode(clean)).toContain('IDAT')
     expect(new TextDecoder('latin1').decode(clean)).not.toContain('Asha')
+  })
+})
+
+describe('jpeg orientation', () => {
+  // SOI, an APP1 EXIF block holding one Orientation entry, then EOI
+  const tagged = (value: number, little = false) => {
+    const u16 = (n: number) => (little ? [n & 0xff, n >> 8] : [n >> 8, n & 0xff])
+    const tiff = [
+      ...(little ? [0x49, 0x49] : [0x4d, 0x4d]),
+      ...u16(42),
+      ...(little ? [8, 0, 0, 0] : [0, 0, 0, 8]),
+      ...u16(1),
+      ...u16(0x0112),
+      ...u16(3),
+      ...(little ? [1, 0, 0, 0] : [0, 0, 0, 1]),
+      ...u16(value),
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+    ]
+    const length = 2 + 6 + tiff.length
+    return new Uint8Array([
+      0xff, 0xd8, 0xff, 0xe1, length >> 8, length & 0xff,
+      0x45, 0x78, 0x69, 0x66, 0, 0, ...tiff, 0xff, 0xd9,
+    ])
+  }
+
+  it('reads the rotation a phone writes, in either byte order', () => {
+    expect(jpegOrientation(tagged(6))).toBe(6)
+    expect(jpegOrientation(tagged(8, true))).toBe(8)
+  })
+
+  it('reports upright for a JPEG with no EXIF', () => {
+    expect(jpegOrientation(new Uint8Array([0xff, 0xd8, 0xff, 0xd9]))).toBe(1)
+  })
+
+  it('reports upright for anything that is not a JPEG', () => {
+    expect(jpegOrientation(new Uint8Array([0x89, 0x50, 0x4e, 0x47]))).toBe(1)
+  })
+
+  it('ignores a value outside the eight the format defines', () => {
+    expect(jpegOrientation(tagged(42))).toBe(1)
   })
 })
