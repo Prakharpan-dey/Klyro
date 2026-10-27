@@ -122,6 +122,40 @@ describe('verifySignatures', () => {
     expect(report.signatureValid).toBe(true) // the blob itself is untouched
   }, 30_000)
 
+  it('rejects a signature whose value was altered, even when the content still matches', async () => {
+    // The other tamper tests change the document and are caught by the digest.
+    // This one leaves every signed byte alone and corrupts only the RSA
+    // signature, so the only thing that can catch it is the public-key check
+    // itself — the code node-forge's PKCS#1 v1.5 fix lives in.
+    const out = await signPdf(await makePdf(), params())
+    const bytes = new Uint8Array(await out.file.arrayBuffer())
+    const text = new TextDecoder('latin1').decode(bytes)
+
+    const open = text.indexOf('<', text.indexOf('/Contents')) + 1
+    const hex = text.slice(open, text.indexOf('>', open))
+    const der = Uint8Array.from(hex.match(/../g)!, (pair) => Number.parseInt(pair, 16))
+
+    // the blob is zero-padded to its reserved size; find where the DER really ends
+    const lengthBytes = der[1] & 0x80 ? der[1] & 0x7f : 0
+    let length = lengthBytes ? 0 : der[1]
+    for (let i = 0; i < lengthBytes; i++) length = (length << 8) | der[2 + i]
+    const end = 2 + lengthBytes + length
+
+    // the RSA signature value is the last field of the SignerInfo
+    const at = end - 8
+    const flipped = (der[at] ^ 0xff).toString(16).padStart(2, '0')
+    const position = open + at * 2
+    const tampered = bytes.slice()
+    tampered[position] = flipped.charCodeAt(0)
+    tampered[position + 1] = flipped.charCodeAt(1)
+
+    const [report] = await verifySignatures(new File([tampered as BlobPart], 'forged.pdf'))
+    // still parsed: the rejection came from the RSA check, not from a broken blob
+    expect(report.signer).toBe('Asha Verma')
+    expect(report.contentMatches).toBe(true)
+    expect(report.signatureValid).toBe(false)
+  }, 30_000)
+
   it('notices bytes appended after the signed range', async () => {
     const out = await signPdf(await makePdf(), params())
     const bytes = new Uint8Array(await out.file.arrayBuffer())
