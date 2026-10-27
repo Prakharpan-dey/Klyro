@@ -19,7 +19,7 @@ const SIZES: Record<Exclude<PageSize, 'fit'>, [number, number]> = {
   letter: [612, 792],
 }
 
-async function embeddableBytes(file: File): Promise<{ bytes: ArrayBuffer; kind: 'jpg' | 'png' }> {
+export async function embeddableBytes(file: File): Promise<{ bytes: ArrayBuffer; kind: 'jpg' | 'png' }> {
   if (file.type === 'image/jpeg') {
     const bytes = await file.arrayBuffer()
     // Passed through untouched only when it is already the right way up. A

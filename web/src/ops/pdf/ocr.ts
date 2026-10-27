@@ -1,5 +1,6 @@
 import type { PDFDocument } from 'pdf-lib'
 import type { OutputFile, Progress } from '../types'
+import { embeddableBytes } from './fromImages'
 import { baseName, loadPdf, pdfLib, savePdf } from './load'
 import { closePdf, openPdf, renderPage } from './pdfjs'
 
@@ -36,7 +37,7 @@ interface PageResult {
 }
 
 type Recognizer = {
-  read: (image: HTMLCanvasElement | File, wantLayer: boolean) => Promise<PageResult>
+  read: (image: HTMLCanvasElement | Blob, wantLayer: boolean) => Promise<PageResult>
   close: () => Promise<void>
 }
 
@@ -143,17 +144,20 @@ async function ocrPdf(
 }
 
 async function ocrImage(file: File, engine: Recognizer, params: OcrParams): Promise<OutputFile> {
-  const result = await engine.read(file, params.output === 'searchable')
+  // The same upright pixels go to the reader and into the PDF. A phone photo
+  // is stored sideways with a tag saying so, which a PDF ignores; reading the
+  // raw file would also place the words for a picture the page doesn't show.
+  const { bytes, kind } = await embeddableBytes(file).catch(() => {
+    throw new OcrError('This image could not be opened')
+  })
+  const upright = new Blob([bytes], { type: kind === 'png' ? 'image/png' : 'image/jpeg' })
+
+  const result = await engine.read(upright, params.output === 'searchable')
   if (params.output === 'text') return textFile(file, [result.text.trim()])
 
   const { PDFDocument } = await pdfLib()
   const doc = await PDFDocument.create()
-  const bytes = new Uint8Array(await file.arrayBuffer())
-  const image =
-    file.type === 'image/png'
-      ? await doc.embedPng(bytes)
-      : await doc.embedJpg(bytes).catch(() => null)
-  if (!image) throw new OcrError('Only JPG and PNG images can be turned into a searchable PDF')
+  const image = kind === 'png' ? await doc.embedPng(bytes) : await doc.embedJpg(bytes)
 
   // a pixel becomes a point, which is the scale Tesseract assumes as well
   const page = doc.addPage([image.width, image.height])
