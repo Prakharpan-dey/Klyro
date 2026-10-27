@@ -23,6 +23,9 @@ export default function HeicToJpgTool() {
       meta={meta}
       files={files}
       job={job}
+      // HEIC packs a photo about twice as tightly as JPG, so the copy is always
+      // larger; showing that as "+80%" reads like something went wrong
+      compareSizes={false}
       runLabel="CONVERT"
       onRun={run}
       footnote="Location and camera details are left out of the converted photos"
