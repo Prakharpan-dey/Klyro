@@ -7,6 +7,16 @@ import {
   type ImageFormat,
   type ResizeSpec,
 } from '@/lib/imageMath'
+import {
+  anchorBox,
+  planGeometry,
+  type CropBox,
+  type Flip,
+  type Geometry,
+  type QuarterTurn,
+  type Watermark,
+} from './geometry'
+import { toDecodable } from './heic'
 
 /** Below this the picture is no longer worth the bytes it saves. */
 const MIN_SIDE = 48
@@ -17,6 +27,19 @@ export interface TransformParams {
   quality?: number
   maxBytes?: number
   resize?: ResizeSpec
+  /** applied in this order, before resizing: crop, then turn and flip, then the mark */
+  crop?: CropBox
+  rotate?: QuarterTurn
+  flip?: Flip
+  watermark?: Watermark
+}
+
+/** Everything `draw` needs besides the bitmap; resolved once, then reused per attempt. */
+interface Layout {
+  geometry: Geometry
+  rotate: QuarterTurn
+  flip: Flip
+  watermark?: Watermark
 }
 
 export interface TransformResult {
@@ -62,10 +85,53 @@ function pickFormat(requested: TransformParams['format'], sourceType: string): I
   return 'image/jpeg'
 }
 
-function draw(bitmap: ImageBitmap, width: number, height: number, format: ImageFormat) {
+type Context = OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D
+
+function drawWatermark(ctx: Context, width: number, height: number, mark: Watermark) {
+  const text = mark.text.trim()
+  if (!text) return
+  // workers cannot load web fonts, so this is the system sans in every case
+  const size = Math.max(8, Math.round(Math.min(width, height) * mark.size))
+  ctx.save()
+  ctx.font = `600 ${size}px system-ui, -apple-system, "Segoe UI", sans-serif`
+  ctx.textBaseline = 'top'
+  ctx.globalAlpha = mark.opacity
+  ctx.fillStyle = mark.colour === 'light' ? '#ffffff' : '#000000'
+  // a hairline of the opposite colour keeps it legible on a busy photo
+  ctx.strokeStyle = mark.colour === 'light' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.35)'
+  ctx.lineWidth = Math.max(1, size / 24)
+
+  const textWidth = ctx.measureText(text).width
+  if (mark.tile) {
+    const stepX = textWidth + size * 3
+    const stepY = size * 4
+    ctx.translate(width / 2, height / 2)
+    ctx.rotate(-Math.PI / 6)
+    const reach = Math.hypot(width, height)
+    for (let y = -reach; y < reach; y += stepY) {
+      for (let x = -reach; x < reach; x += stepX) {
+        ctx.strokeText(text, x, y)
+        ctx.fillText(text, x, y)
+      }
+    }
+  } else {
+    const margin = Math.round(Math.min(width, height) * 0.03)
+    const { x, y } = anchorBox({ width, height }, { width: textWidth, height: size }, mark.anchor, margin)
+    ctx.strokeText(text, x, y)
+    ctx.fillText(text, x, y)
+  }
+  ctx.restore()
+}
+
+function draw(
+  bitmap: ImageBitmap,
+  width: number,
+  height: number,
+  format: ImageFormat,
+  layout: Layout,
+) {
   const canvas = createCanvas(width, height)
-  const ctx = canvas.getContext('2d') as
-    OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D | null
+  const ctx = canvas.getContext('2d') as Context | null
   if (!ctx) throw new Error('Canvas is not available')
   if (format === 'image/jpeg') {
     // JPEG has no alpha, so transparent pixels would turn black
@@ -73,7 +139,21 @@ function draw(bitmap: ImageBitmap, width: number, height: number, format: ImageF
     ctx.fillRect(0, 0, width, height)
   }
   ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(bitmap, 0, 0, width, height)
+
+  const { sx, sy, sw, sh } = layout.geometry
+  const quarter = layout.rotate === 90 || layout.rotate === 270
+  // the source is drawn upright into a box that, once turned, fills the canvas
+  const drawWidth = quarter ? height : width
+  const drawHeight = quarter ? width : height
+
+  ctx.save()
+  ctx.translate(width / 2, height / 2)
+  ctx.rotate((layout.rotate * Math.PI) / 180)
+  ctx.scale(layout.flip === 'h' ? -1 : 1, layout.flip === 'v' ? -1 : 1)
+  ctx.drawImage(bitmap, sx, sy, sw, sh, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight)
+  ctx.restore()
+
+  if (layout.watermark) drawWatermark(ctx, width, height, layout.watermark)
   return canvas
 }
 
@@ -81,24 +161,33 @@ export async function transformImage(
   source: Blob,
   params: TransformParams,
 ): Promise<TransformResult> {
-  const bitmap = await createImageBitmap(source, { imageOrientation: 'from-image' })
+  // HEIC is decoded to PNG first where the browser cannot read it; the format
+  // choice below still goes by the original, so "keep" on a photo gives a JPEG
+  const decodable = await toDecodable(source)
+  const bitmap = await createImageBitmap(decodable, { imageOrientation: 'from-image' })
   try {
     const format = pickFormat(params.format, source.type)
+    const layout: Layout = {
+      geometry: planGeometry({ width: bitmap.width, height: bitmap.height }, params.crop, params.rotate),
+      rotate: params.rotate ?? 0,
+      flip: params.flip ?? 'none',
+      watermark: params.watermark,
+    }
     let { width, height } = resolveSize(
-      { width: bitmap.width, height: bitmap.height },
+      { width: layout.geometry.width, height: layout.geometry.height },
       params.resize,
     )
     const quality = params.quality ?? 0.9
 
     if (!params.maxBytes) {
-      const blob = await toBlob(draw(bitmap, width, height, format), format, quality)
+      const blob = await toBlob(draw(bitmap, width, height, format, layout), format, quality)
       return { blob, width, height, quality: isLossy(format) ? quality : undefined, fits: true }
     }
 
     // Target size: lower quality first, then shrink dimensions if that is not enough.
     let last: TransformResult | null = null
     for (let attempt = 0; attempt < 12; attempt++) {
-      const canvas = draw(bitmap, width, height, format)
+      const canvas = draw(bitmap, width, height, format, layout)
       if (isLossy(format)) {
         // AVIF encodes several times slower than JPEG, so it gets a shorter search
         const steps = format === 'image/avif' ? 5 : 7

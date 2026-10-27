@@ -17,7 +17,8 @@ export interface FileMeta {
 const EXIF_MARKER = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00] // "Exif\0\0"
 
 export function kindOf(file: File): FileKind {
-  if (file.type.startsWith('image/')) return 'image'
+  // Windows hands HEIC over with an empty mime type
+  if (file.type.startsWith('image/') || /\.hei[cf]$/i.test(file.name)) return 'image'
   if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) return 'pdf'
   // Windows hands .mkv and sometimes .mov over with an empty mime type
   if (file.type.startsWith('video/') || /\.(mp4|m4v|mov|webm|mkv)$/i.test(file.name)) return 'video'
@@ -40,6 +41,8 @@ const EXTENSIONS: Record<string, RegExp> = {
   'application/rtf': /\.rtf$/i,
   'text/html': /\.x?html?$/i,
   'text/csv': /\.csv$/i,
+  'image/heic': /\.heic$/i,
+  'image/heif': /\.heif$/i,
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': /\.xlsx$/i,
 }
 
