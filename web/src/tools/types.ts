@@ -47,6 +47,9 @@ export const SHEET_ACCEPT = [
   'application/vnd.ms-excel',
   'text/csv',
 ]
+// Windows labels .csv as application/vnd.ms-excel whenever Excel is installed;
+// the reader sniffs the bytes, so taking that label in is safe
+export const CSV_ACCEPT = ['text/csv', 'application/vnd.ms-excel']
 export const DOCX_ACCEPT = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ]
@@ -63,4 +66,7 @@ export const IMAGE_ACCEPT = [
   'image/bmp',
   'image/avif',
   'image/gif',
+  // iPhone photos; decoded in ops/image/heic.ts where the browser cannot
+  'image/heic',
+  'image/heif',
 ]
