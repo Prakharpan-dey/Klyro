@@ -1,168 +1,143 @@
-import { useRef, useState, type FormEvent, type RefObject } from 'react'
+import { useState } from 'react'
+import { Link } from 'react-router'
 import { PAGE_SEO } from '@/lib/seo'
 import { useDocumentMeta } from '@/lib/useDocumentMeta'
 import { Dropzone } from '@/components/console/Dropzone'
 import { describeMeta } from '@/components/console/describeMeta'
 import { FileRow } from '@/components/console/FileRow'
 import { Panel, ReadoutRow } from '@/components/console/Panel'
-import { ResultList } from '@/components/tool/ResultList'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Progress } from '@/components/ui/progress'
-import { Switch } from '@/components/ui/switch'
-import { usePlanner } from '@/features/planner/usePlanner'
 import { useTelemetry } from '@/features/telemetry/useTelemetry'
 import { useWorkspace } from '@/features/workspace/useWorkspace'
-import { formatBytes } from '@/lib/format'
-import { describeStep } from '@/lib/plan/describe'
-import type { StepProgress } from '@/lib/plan/execute'
-import { cn } from '@/lib/utils'
-
-type Planner = ReturnType<typeof usePlanner>
-
-const examples = ['Compress to 200 KB', 'Merge + drop page 2', 'All → WebP']
+import { matchesAccept } from '@/lib/fileMeta'
+import { toolGroups, tools, type Tool } from '@/tools/registry'
 
 /**
- * One polite channel for the console.
+ * Every tool on one page.
  *
- * Every signal this surface gives is visual — a skeleton, a progress bar, a
- * list appearing — and none of it reaches a screen reader. The round trip to
- * the planner is the whole interaction, so its phases are said in words.
+ * Files dropped on the landing page arrive here staged, and the list narrows to
+ * the tools that can take them, so "I have three PDFs" becomes a short list
+ * instead of eighty names. Opening a tool carries the staged files in with it.
  */
-function StatusAnnouncer({ planner }: { planner: Planner }) {
-  const { phase, plan, steps, results } = planner
-  const count = plan?.steps.length ?? 0
-  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
-  let message = ''
-  if (phase === 'planning') message = 'Planning the job'
-  else if (phase === 'planned' && plan) {
-    message = count
-      ? `Plan ready, ${plural(count, 'step')}. ${plan.summary}`
-      : `No plan. ${plan.clarification ?? ''}`
-  } else if (phase === 'running') {
-    const done = steps.filter((s) => s?.status === 'done').length
-    message = `Running ${plural(count, 'step')}, ${done} finished`
-  } else if (phase === 'done') {
-    message = `Finished. ${plural(results.length, 'file')} ready to save.`
-  }
+function matches(tool: Tool, query: string): boolean {
+  return `${tool.title} ${tool.summary} ${tool.code} ${tool.group} ${tool.slug.replace(/-/g, ' ')}`
+    .toLowerCase()
+    .includes(query)
+}
 
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
+
+function ToolTile({ tool }: { tool: Tool }) {
   return (
-    <p role="status" aria-live="polite" className="sr-only">
-      {message}
-    </p>
+    <Link
+      to={`/tools/${tool.slug}`}
+      className="group flex flex-col gap-1.5 border border-line-soft bg-well px-3.5 py-3 transition-colors hover:border-primary hover:bg-primary/8 focus-visible:border-primary focus-visible:outline-none"
+    >
+      <span className="flex items-baseline justify-between gap-2">
+        <span className="font-sans text-[13.5px] leading-tight font-medium text-foreground">
+          {tool.title}
+        </span>
+        <span className="readout shrink-0 text-[9px] text-faint group-hover:text-primary">
+          {tool.code}
+        </span>
+      </span>
+      <span className="font-sans text-[12px] leading-snug text-soft">{tool.summary}</span>
+    </Link>
   )
 }
 
-function InstructionPanel({
-  planner,
-  inputRef,
-}: {
-  planner: Planner
-  inputRef: RefObject<HTMLInputElement | null>
-}) {
-  const [text, setText] = useState('')
-  const [shareNames, setShareNames] = useState(false)
-  const { plannerConnected } = useTelemetry()
+function DirectoryPanel() {
   const { files } = useWorkspace()
+  const [query, setQuery] = useState('')
+  const [showAll, setShowAll] = useState(false)
 
-  const planning = planner.phase === 'planning'
-  const running = planner.phase === 'running'
-  const pendingMeta = files.some((f) => !f.meta)
+  const q = query.trim().toLowerCase()
+  const fitting = (tool: Tool) => files.some((f) => matchesAccept(f.file, tool.accept))
+  const narrowed = files.length > 0 && !showAll
+  const keep = (tool: Tool) => (!q || matches(tool, q)) && (!narrowed || fitting(tool))
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault()
-    if (!text.trim() || planning || running) return
-    planner.submit(text, files, shareNames)
-  }
+  const sections = toolGroups
+    .map((section) => ({ ...section, tools: section.tools.filter(keep) }))
+    .filter((section) => section.tools.length > 0)
+  const shown = sections.reduce((n, section) => n + section.tools.length, 0)
 
   return (
-    <Panel label="A · Instruction" tone="deep" className="px-6 py-[26px] [grid-area:a]">
+    <Panel
+      label="A · Tools"
+      tone="deep"
+      className="px-6 py-[26px]"
+      meta={
+        <span className="text-primary">
+          {shown === tools.length ? tools.length : `${shown} of ${tools.length}`}
+        </span>
+      }
+    >
       <h1 className="mt-4 font-sans text-[30px] leading-[1.06] font-medium tracking-[-0.035em] text-foreground sm:text-[38px]">
-        What needs doing?
+        All tools
       </h1>
-      <p className="mt-3.5 max-w-[46ch] font-sans text-[14.5px] leading-relaxed text-pretty text-soft">
-        Describe the job in a sentence and a plan comes back for you to approve. Only that sentence
-        and each file's size and type are sent — the files themselves stay on this machine.
+      <p className="mt-3.5 max-w-[52ch] font-sans text-[14.5px] leading-relaxed text-pretty text-soft">
+        {tools.length} tools for images, PDFs and video. Each one runs in this tab, and nothing you
+        give it is sent anywhere.
       </p>
 
-      <form
-        onSubmit={submit}
-        className="mt-6 flex items-stretch border border-primary bg-sunken shadow-[0_0_0_3px_rgba(77,184,255,.1)] focus-within:shadow-[0_0_0_3px_rgba(77,184,255,.25)]"
-      >
-        <span className="flex items-center border-r border-line bg-primary/15 px-[13px] text-[13px] font-semibold text-primary">
-          ›
-        </span>
-        <label htmlFor="instruction" className="sr-only">
-          Describe what to do with your files
-        </label>
-        <input
-          id="instruction"
-          ref={inputRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          maxLength={500}
-          placeholder="merge these, remove page 3, under 500 KB"
-          autoComplete="off"
-          className="min-w-0 flex-1 bg-transparent px-3.5 py-4 text-sm text-foreground caret-primary outline-none placeholder:text-faint"
-        />
-        <Button
-          type="submit"
-          disabled={!plannerConnected || !text.trim() || planning || running || pendingMeta}
-          className="h-auto px-5 text-[11.5px] font-semibold tracking-[0.12em]"
-        >
-          {planning ? 'PLANNING…' : 'PLAN →'}
-        </Button>
-      </form>
+      <input
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search: compress, merge, heic, sign…"
+        aria-label="Search tools"
+        className="mt-6 h-11 w-full border border-primary bg-sunken px-3.5 font-mono text-[13px] text-foreground shadow-[0_0_0_3px_rgba(77,184,255,.1)] outline-none placeholder:text-faint focus:shadow-[0_0_0_3px_rgba(77,184,255,.25)]"
+      />
 
-      <div className="mt-[11px] flex flex-wrap gap-2">
-        {examples.map((ex) => (
+      {files.length > 0 && (
+        <p role="status" className="mt-3 readout text-[10px] text-faint">
+          {narrowed
+            ? `Showing the tools that take your ${plural(files.length, 'staged file')} · `
+            : `Showing every tool · `}
           <button
-            key={ex}
             type="button"
-            onClick={() => {
-              setText(ex.toLowerCase())
-              inputRef.current?.focus()
-            }}
-            className="border border-line px-[11px] py-2 text-[11px] leading-none tracking-[0.06em] text-soft uppercase transition-colors hover:border-primary hover:text-foreground"
+            onClick={() => setShowAll((all) => !all)}
+            className="text-primary underline-offset-2 hover:underline"
           >
-            {ex}
+            {narrowed ? 'show all' : 'only ones that fit'}
           </button>
-        ))}
-      </div>
+        </p>
+      )}
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <Switch id="share-names" size="sm" checked={shareNames} onCheckedChange={setShareNames} />
-          <Label htmlFor="share-names" className="readout text-[10px] text-dim">
-            Share file names with the planner
-          </Label>
+      {sections.length ? (
+        <div className="mt-6 flex flex-col gap-7">
+          {sections.map((section) => (
+            <section key={section.group} aria-label={section.group}>
+              <h2 className="label">
+                {section.group}{' '}
+                <span className="readout text-[10px] text-faint">{section.tools.length}</span>
+              </h2>
+              <div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-2 2xl:grid-cols-3">
+                {section.tools.map((tool) => (
+                  <ToolTile key={tool.slug} tool={tool} />
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
-        {!plannerConnected && (
-          <span className="readout text-[10px] text-egress">Planner not connected</span>
-        )}
-        {plannerConnected && !files.length && (
-          <span className="readout text-[10px] text-faint">Stage files in B first</span>
-        )}
-      </div>
+      ) : (
+        <p className="mt-6 font-sans text-[13px] text-faint">
+          Nothing matches “{query.trim()}”{narrowed ? ' among the tools that take your files' : ''}.
+        </p>
+      )}
     </Panel>
   )
 }
 
-function IntakePanel({ locked }: { locked: boolean }) {
+function IntakePanel() {
   const { files, add, remove, clear } = useWorkspace()
   return (
     <Panel
       label="B · Intake"
-      className="flex flex-col self-stretch [grid-area:b]"
+      className="flex flex-col"
       meta={
         files.length ? (
-          <button
-            type="button"
-            onClick={clear}
-            disabled={locked}
-            className="text-local hover:text-foreground disabled:opacity-50"
-          >
+          <button type="button" onClick={clear} className="text-local hover:text-foreground">
             {files.length} staged · clear
           </button>
         ) : (
@@ -172,204 +147,29 @@ function IntakePanel({ locked }: { locked: boolean }) {
     >
       {files.length > 0 && (
         <div className="mt-3.5 flex max-h-[380px] flex-col gap-[7px] overflow-y-auto">
-          {files.map((f, i) => (
-            <div key={f.id} className="flex items-stretch">
-              <span className="flex w-9 shrink-0 items-center justify-center border border-r-0 border-line-soft bg-well text-[10px] text-primary">
-                {String(i).padStart(2, '0')}
-              </span>
-              <FileRow
-                file={f.file}
-                detail={describeMeta(f.meta, f.file.size)}
-                onRemove={locked ? undefined : () => remove(f.id)}
-                className="flex-1"
-              />
-            </div>
+          {files.map((f) => (
+            <FileRow
+              key={f.id}
+              file={f.file}
+              detail={describeMeta(f.meta, f.file.size)}
+              onRemove={() => remove(f.id)}
+            />
           ))}
         </div>
       )}
       <Dropzone
         onFiles={add}
-        className="mt-[11px] flex-1"
-        hint="Staged files stay in this tab's memory and are gone when you close it."
+        className="mt-[11px]"
+        hint="Drop files to see which tools take them. They stay in this tab's memory."
       />
     </Panel>
   )
 }
 
-function PlanPanel({ planner, onEdit }: { planner: Planner; onEdit: () => void }) {
-  const { files } = useWorkspace()
-  const { phase, plan, bytesSent, mode, error } = planner
-  const names = planner.files.map((f) => f.name)
-
-  // the plan refers to files by position, so any change to the staged list makes it stale
-  const stale =
-    Boolean(plan) &&
-    (files.length !== planner.files.length || files.some((f, i) => f.file !== planner.files[i]))
-  const canRun = phase === 'planned' && Boolean(plan?.steps.length) && !stale
-
-  const meta =
-    phase === 'planning' ? (
-      <span className="text-egress">● /plan · sending</span>
-    ) : bytesSent ? (
-      <span className="text-egress">
-        ● /plan · {bytesSent} B sent{mode === 'rules' ? ' · rules' : ''}
-      </span>
-    ) : (
-      <span className="text-dim">/plan · idle</span>
-    )
-
+function TelemetryPanel() {
+  const { pool, online, offOrigin } = useTelemetry()
   return (
-    <Panel label="C · Plan" className="[grid-area:c]" meta={meta}>
-      {phase === 'idle' && (
-        <div className="mt-3.5 border border-line-soft bg-well px-3 py-5 font-sans text-[12.5px] leading-relaxed text-soft">
-          No plan yet. Describe a job in <span className="text-primary">A</span> and every step will
-          be listed here — marked <span className="font-mono text-local">LOCAL</span> — before
-          anything runs.
-        </div>
-      )}
-
-      {phase === 'planning' && (
-        <div className="mt-3.5 flex flex-col gap-px border border-line-soft bg-line-soft">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="flex items-center gap-3 bg-well px-3 py-[11px]">
-              <span className="h-2.5 w-4 animate-pulse bg-line" />
-              <span
-                className="h-2.5 animate-pulse bg-line-soft"
-                style={{ width: `${60 - i * 12}%` }}
-              />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {phase === 'error' && !plan && (
-        <div
-          role="alert"
-          className="mt-3.5 border border-destructive/40 bg-well px-3 py-4 font-sans text-[12.5px] text-destructive"
-        >
-          {error}
-        </div>
-      )}
-
-      {plan && (
-        <>
-          {plan.summary && (
-            <p className="mt-3.5 font-sans text-[13px] leading-relaxed text-foreground">
-              {plan.summary}
-            </p>
-          )}
-          {plan.steps.length > 0 && (
-            <ol className="mt-3 flex flex-col gap-px border border-line-soft bg-line-soft">
-              {plan.steps.map((step, i) => (
-                <li key={i} className="flex items-center gap-3 bg-well px-3 py-[11px]">
-                  <span className="text-[10px] font-medium text-primary">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span className="flex-1 font-sans text-[12.5px] leading-snug text-foreground">
-                    {describeStep(step, names)}
-                  </span>
-                  <span className="text-[10px] tracking-[0.08em] text-local">LOCAL</span>
-                </li>
-              ))}
-            </ol>
-          )}
-          {plan.clarification && (
-            <div className="mt-3 border border-egress/40 bg-egress/5 px-3 py-3 font-sans text-[12.5px] leading-relaxed text-egress">
-              {plan.clarification}
-            </div>
-          )}
-          {mode === 'rules' && (
-            <p className="mt-3 readout text-[10px] text-egress">
-              Planned by the API&apos;s keyword rules · the model is unavailable on this account
-            </p>
-          )}
-          {stale && (
-            <p className="mt-3 readout text-[10px] text-egress">
-              Staged files changed · plan again before running
-            </p>
-          )}
-        </>
-      )}
-
-      <div className="mt-3 flex gap-2">
-        <Button
-          disabled={!canRun}
-          onClick={planner.run}
-          className="h-auto flex-1 py-3 text-[11.5px] font-semibold tracking-[0.12em]"
-        >
-          {phase === 'running' ? 'RUNNING…' : 'RUN'}
-        </Button>
-        <Button
-          variant="outline"
-          disabled={phase === 'running' || phase === 'planning'}
-          onClick={onEdit}
-          className="h-auto px-4 py-3 text-[11.5px] tracking-[0.12em] text-soft"
-        >
-          EDIT
-        </Button>
-      </div>
-    </Panel>
-  )
-}
-
-const stepStatus: Record<StepProgress['status'], string> = {
-  queued: 'text-dim',
-  running: 'text-primary',
-  done: 'text-local',
-  error: 'text-destructive',
-}
-
-function RunPanel({ planner }: { planner: Planner }) {
-  const { plan, steps, phase, error } = planner
-  const total = plan?.steps.length ?? 0
-  const done = steps.filter((s) => s?.status === 'done').length
-  const showSteps = steps.length > 0 && plan
-
-  return (
-    <Panel label="D · Run" className="[grid-area:d]">
-      <div className="mt-4 text-[26px] leading-none font-medium text-foreground">
-        {showSteps ? done : 0} / {showSteps ? total : 0}
-      </div>
-      <Progress
-        value={total && showSteps ? (done / total) * 100 : 0}
-        className="mt-3 h-1.5 bg-line-soft"
-      />
-      <div className="mt-3.5 readout leading-[1.9] text-faint">
-        {showSteps ? (
-          plan.steps.map((step, i) => {
-            const s = steps[i]
-            const label =
-              s?.status === 'done'
-                ? `Done ${((s.ms ?? 0) / 1000).toFixed(1)}s`
-                : s?.status === 'error'
-                  ? 'Failed'
-                  : (s?.status ?? 'queued')
-            return (
-              <ReadoutRow
-                key={i}
-                label={step.op.split('.')[1].replace(/([A-Z])/g, ' $1')}
-                value={label}
-                className={stepStatus[s?.status ?? 'queued']}
-              />
-            )
-          })
-        ) : (
-          <ReadoutRow label="Status" value="Idle" className="text-dim" />
-        )}
-      </div>
-      {phase === 'error' && plan && error && (
-        <p role="alert" className="mt-2 font-sans text-[12px] text-destructive">
-          {error}
-        </p>
-      )}
-    </Panel>
-  )
-}
-
-function TelemetryPanel({ planner }: { planner: Planner }) {
-  const { pool, online, offOrigin, plannerConnected } = useTelemetry()
-  return (
-    <Panel label="E · Telemetry" className="[grid-area:e]">
+    <Panel label="C · Telemetry">
       <div className="mt-4 readout leading-loose text-faint">
         <ReadoutRow
           label="Workers"
@@ -390,62 +190,22 @@ function TelemetryPanel({ planner }: { planner: Planner }) {
           value={offOrigin}
           className={offOrigin ? 'text-egress' : 'text-local'}
         />
-        <ReadoutRow
-          label="Planner"
-          value={
-            !plannerConnected
-              ? 'Not connected'
-              : planner.bytesSent
-                ? `/plan · ${formatBytes(planner.bytesSent)}`
-                : '/plan only'
-          }
-          className="text-egress"
-        />
       </div>
-    </Panel>
-  )
-}
-
-function OutputPanel({ planner }: { planner: Planner }) {
-  return (
-    <Panel
-      label="G · Output"
-      tone="deep"
-      className="[grid-area:g]"
-      meta={
-        <span className="text-local">
-          Done · {((planner.elapsedMs ?? 0) / 1000).toFixed(1)}s · local
-        </span>
-      }
-    >
-      <ResultList results={planner.results} zipName="klyro-output.zip" compareSizes={false} />
     </Panel>
   )
 }
 
 export function Home() {
   useDocumentMeta(PAGE_SEO['/console'])
-  const planner = usePlanner()
-  const inputRef = useRef<HTMLInputElement>(null)
-  const hasOutput = planner.phase === 'done' && planner.results.length > 0
 
   return (
-    <div
-      className={cn(
-        // the rail costs 212px, so the lopsided split waits for xl or the intake gets cramped
-        'grid grid-cols-1 items-start gap-3.5 md:grid-cols-2 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]',
-        hasOutput
-          ? "[grid-template-areas:'a'_'b'_'c'_'d'_'g'_'e'] md:[grid-template-areas:'a_a'_'b_b'_'c_c'_'d_e'_'g_g'] xl:[grid-template-areas:'a_b'_'c_b'_'d_e'_'g_g']"
-          : "[grid-template-areas:'a'_'b'_'c'_'d'_'e'] md:[grid-template-areas:'a_a'_'b_b'_'c_c'_'d_e'] xl:[grid-template-areas:'a_b'_'c_b'_'d_e']",
-      )}
-    >
-      <StatusAnnouncer planner={planner} />
-      <InstructionPanel planner={planner} inputRef={inputRef} />
-      <IntakePanel locked={planner.phase === 'running'} />
-      <PlanPanel planner={planner} onEdit={() => inputRef.current?.focus()} />
-      <RunPanel planner={planner} />
-      <TelemetryPanel planner={planner} />
-      {hasOutput && <OutputPanel planner={planner} />}
+    <div className="grid grid-cols-1 items-start gap-3.5 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <DirectoryPanel />
+      {/* its own column, so the long tool list cannot stretch the rows beside it */}
+      <div className="flex flex-col gap-3.5 xl:sticky xl:top-3.5">
+        <IntakePanel />
+        <TelemetryPanel />
+      </div>
     </div>
   )
 }

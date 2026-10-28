@@ -145,12 +145,12 @@ write(
 write(
   '/console',
   render(template, {
-    title: 'Console — describe a file job in one sentence | Klyro',
+    title: 'All Tools — free PDF, image and video tools | Klyro',
     description:
-      'Say what you want done and Klyro plans the steps, then runs them on your own machine. Only the sentence and each file size are sent — never the file.',
+      'Every Klyro tool in one place: merge, compress, convert, sign and edit PDFs, images and video in your browser. Nothing is uploaded, nothing is sent.',
     path: '/console',
-    heading: 'What needs doing?',
-    body: 'Describe the job in a sentence and a plan comes back for you to approve, then runs in your browser.',
+    heading: 'All tools',
+    body: `${tools.length} tools for images, PDFs and video. Each one runs in your browser, and nothing you give it is sent anywhere.`,
   }),
 )
 
@@ -202,9 +202,6 @@ writeFileSync(
     .join('\n')}\n</urlset>\n`,
 )
 
-writeFileSync(
-  join(dist, 'robots.txt'),
-  `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`,
-)
+writeFileSync(join(dist, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`)
 
 console.log(`seo: ${routes.length} routes, sitemap and robots.txt written to dist/`)

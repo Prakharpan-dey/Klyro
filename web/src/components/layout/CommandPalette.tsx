@@ -91,10 +91,10 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         <CommandGroup heading="Go to">
           <CommandItem onSelect={() => go('/console')}>
             <span className="shrink-0 font-sans text-[13px] text-foreground sm:w-[10.5rem]">
-              Home console
+              All tools
             </span>
             <span className="hidden min-w-0 flex-1 truncate text-faint sm:block">
-              Describe a job and run it on {tools.length} tools
+              Every one of the {tools.length}, by group
             </span>
           </CommandItem>
           <CommandItem onSelect={() => go('/privacy')}>

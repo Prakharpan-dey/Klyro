@@ -31,9 +31,9 @@ export function toolSeo(meta: ToolMeta): PageSeo {
 export const PAGE_SEO: Record<string, PageSeo> = {
   '/': { title: SITE_TITLE, description: SITE_DESCRIPTION, path: '/' },
   '/console': {
-    title: 'Console — describe a file job in one sentence | Klyro',
+    title: 'All Tools — free PDF, image and video tools | Klyro',
     description:
-      'Say what you want done and Klyro plans the steps, then runs them on your own machine. Only the sentence and each file’s size are ever sent — never the file.',
+      'Every Klyro tool in one place: merge, compress, convert, sign and edit PDFs, images and video in your browser. Nothing is uploaded, nothing is sent.',
     path: '/console',
   },
   '/privacy': {

@@ -65,8 +65,8 @@ const steps = [
   },
   {
     n: '02',
-    title: 'Say what you want, or pick a tool',
-    body: 'Describe the job in a sentence and a plan comes back for you to approve. Only that sentence and each file’s size and type are sent — never the file.',
+    title: 'Pick a tool',
+    body: 'Only the tools that can take what you dropped are shown. Open one and your files are already in it, ready for its settings.',
   },
   {
     n: '03',
@@ -82,15 +82,15 @@ const guarantees = [
   },
   {
     title: 'The browser enforces it, not a promise',
-    body: 'A Content-Security-Policy allows connections to this site and the planner alone, so even a compromised dependency could not post your file elsewhere.',
+    body: 'A Content-Security-Policy allows connections to this site alone, so even a compromised dependency could not post your file anywhere.',
   },
   {
-    title: 'The planner never sees a file',
-    body: 'It receives your sentence plus each file’s kind, size and page count — a few hundred bytes, counted on screen every time. File names stay behind unless you allow them.',
+    title: 'Nothing about a file is sent',
+    body: 'Not the file, not its name, not its size. The site loads its own code and fonts and makes no other request, which the counter above shows as it happens.',
   },
   {
     title: 'Nothing is kept, anywhere',
-    body: 'No account, no history, no storage. The server logs timings and never the instruction; a test fails if that changes.',
+    body: 'No account, no history, no storage. There is no server behind this site to keep anything; it is plain files.',
   },
 ]
 
@@ -99,7 +99,7 @@ export function Landing() {
   const navigate = useNavigate()
   const { add } = useWorkspace()
 
-  // dropping here is the fast path: stage the files, then land in the console with them ready
+  // dropping here is the fast path: stage the files, then show the tools that take them
   const stage = (files: File[]) => {
     add(files)
     navigate('/console')
@@ -121,7 +121,7 @@ export function Landing() {
               to="/console"
               className="inline-flex items-center border border-primary px-3 py-2.5 text-primary-hover transition-colors hover:bg-primary/12"
             >
-              OPEN CONSOLE →
+              ALL TOOLS →
             </Link>
           </nav>
         </div>
@@ -146,7 +146,7 @@ export function Landing() {
               to="/console"
               className="border border-primary bg-primary/12 px-6 py-3.5 text-center text-[12px] leading-none tracking-[0.14em] text-primary-hover uppercase transition-colors hover:bg-primary/20"
             >
-              Open the console
+              See all {tools.length} tools
             </Link>
             <span className="readout text-[10px] text-faint sm:ml-2">
               No account · no upload · works offline once loaded
@@ -166,7 +166,7 @@ export function Landing() {
               hint="Images, PDFs and video. They are staged in this tab and go nowhere else."
             />
             <p className="mt-3 font-sans text-[12.5px] text-dim">
-              Dropping a file here takes you straight into the console with it already staged.
+              Drop a file and you get the tools that can take it, with the file already in them.
             </p>
           </div>
         </section>
@@ -280,7 +280,7 @@ export function Landing() {
               to="/console"
               className="inline-flex items-center px-2 py-[7px] text-dim hover:text-foreground"
             >
-              Console
+              All tools
             </Link>
           </div>
         </div>
