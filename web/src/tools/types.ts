@@ -42,6 +42,21 @@ export const VIDEO_ACCEPT = [
   'video/x-matroska',
   'video/x-m4v',
 ]
+/** Sound files mediabunny can read; mp3 included, so an MP3 can be trimmed or re-rated. */
+export const AUDIO_ACCEPT = [
+  'audio/mpeg',
+  'audio/mp4',
+  'audio/x-m4a',
+  'audio/aac',
+  'audio/wav',
+  'audio/x-wav',
+  'audio/wave',
+  'audio/ogg',
+  'audio/opus',
+  'audio/webm',
+  'audio/flac',
+  'audio/x-flac',
+]
 export const SHEET_ACCEPT = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-excel',
@@ -59,6 +74,8 @@ export const EPUB_ACCEPT = ['application/epub+zip']
 export const ZIP_ACCEPT = ['application/zip', 'application/x-zip-compressed']
 export const HTML_ACCEPT = ['text/html', 'application/xhtml+xml']
 export const RTF_ACCEPT = ['application/rtf', 'text/rtf']
+// kept apart from IMAGE_ACCEPT: the image workers cannot decode SVG
+export const SVG_ACCEPT = ['image/svg+xml']
 export const IMAGE_ACCEPT = [
   'image/jpeg',
   'image/png',

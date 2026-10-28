@@ -43,6 +43,13 @@ const EXTENSIONS: Record<string, RegExp> = {
   'text/csv': /\.csv$/i,
   'image/heic': /\.heic$/i,
   'image/heif': /\.heif$/i,
+  'image/svg+xml': /\.svg$/i,
+  // Windows often reports these with an empty or odd type
+  'audio/mpeg': /\.mp3$/i,
+  'audio/mp4': /\.m4a$/i,
+  'audio/wav': /\.wav$/i,
+  'audio/ogg': /\.(ogg|oga|opus)$/i,
+  'audio/flac': /\.flac$/i,
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': /\.xlsx$/i,
 }
 
