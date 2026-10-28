@@ -60,6 +60,13 @@ export function BoxCanvas({
   const [error, setError] = useState<string>()
   const hintId = useId()
 
+  // held in a ref: callers pass a fresh arrow each render, and reopening the
+  // document on every change would race the page render
+  const unavailable = useRef(onUnavailable)
+  useEffect(() => {
+    unavailable.current = onUnavailable
+  })
+
   // one document, held open for the life of the panel
   useEffect(() => {
     let closed = false
@@ -73,7 +80,7 @@ export function BoxCanvas({
       .catch(() => {
         if (closed) return
         setError('This PDF cannot be shown here')
-        onUnavailable?.()
+        unavailable.current?.()
       })
 
     return () => {
@@ -82,7 +89,7 @@ export function BoxCanvas({
       doc.current = null
       if (open) void closePdf(open)
     }
-  }, [file, onUnavailable])
+  }, [file])
 
   useEffect(() => {
     if (!pages) return

@@ -48,6 +48,13 @@ export function PagePlacer({
   const [error, setError] = useState<string>()
   const hintId = useId()
 
+  // held in a ref: callers pass a fresh arrow each render, and reopening the
+  // document on every change would race the page render
+  const unavailable = useRef(onUnavailable)
+  useEffect(() => {
+    unavailable.current = onUnavailable
+  })
+
   // one document, held open for the life of the panel: reopening per render is
   // what makes page flipping feel slow
   useEffect(() => {
@@ -62,7 +69,7 @@ export function PagePlacer({
       .catch(() => {
         if (closed) return
         setError('This PDF cannot be shown here')
-        onUnavailable?.()
+        unavailable.current?.()
       })
 
     return () => {
@@ -71,7 +78,7 @@ export function PagePlacer({
       doc.current = null
       if (open) void closePdf(open)
     }
-  }, [file, onUnavailable])
+  }, [file])
 
   // render the current page, ignoring anything that finished out of order
   useEffect(() => {
