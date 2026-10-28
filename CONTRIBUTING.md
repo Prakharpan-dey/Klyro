@@ -27,8 +27,6 @@ npm install
 npm run dev
 ```
 
-The planner API in `api/` is optional. `MOCK_PLANNER=1` in `api/.env` answers with a keyword planner and needs no AWS account.
-
 ## Before you open a pull request
 
 ```bash
@@ -39,7 +37,7 @@ npm test              # vitest
 npm run build
 ```
 
-All four are clean on `main`, and CI runs the same ones for `web/` and `api/`. If `npm run preview` is relevant to your change — anything touching workers, WASM, blobs or media — run that too: it serves the production build under the real Content-Security-Policy, which is where those break.
+All four are clean on `main`, and CI runs the same ones. If `npm run preview` is relevant to your change — anything touching workers, WASM, blobs or media — run that too: it serves the production build under the real Content-Security-Policy, which is where those break.
 
 ## How the code is arranged
 

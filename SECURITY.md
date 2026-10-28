@@ -18,14 +18,12 @@ Anything that lets file contents leave the browser, or that weakens the barriers
 
 - A request carrying file bytes, or a way to make one — including through a dependency, a worker, a WASM module or a blob URL.
 - A bypass of the Content-Security-Policy in `customHttp.yml`, particularly `connect-src`, `script-src` or `worker-src`.
-- The planner API receiving more than it should. It is supposed to see only the instruction plus each file's kind, mime type, size, and whichever of page count, pixel size or duration applies — never contents, and never names unless the user turns them on. `buildPlanRequest` in `web/src/lib/plan/api.ts` is the whole of it, and `api.test.ts` asserts a file name never appears in the body.
-- Anything the server logs that it should not. `api/src/` has a test asserting instructions and file names never reach the logs.
+- Any request leaving the site at all. The site has no backend, and `connect-src` allows only itself, so a request to another origin is a finding even if it carries no file data.
 - Data surviving a tool that claims to remove it — for example a value still findable in the bytes after Privacy Check or Photo Privacy reports it gone.
 - Stored state that outlives the tab when the app says nothing is stored.
 
 ## What does not count
 
-- **Missing rate limits on the public planner endpoint.** It is throttled and budget-alarmed on purpose rather than authenticated; the worst case is a bill, and that is accepted and documented.
 - **A tool producing a poor-quality result.** That is a bug, not a vulnerability — please open a normal issue.
 - **Output that a third-party reader opens differently.** Also a normal issue.
 - **Findings from an automated scanner with no working proof of concept.**
