@@ -26,6 +26,8 @@ export async function renderPage(
   doc: PDFDocumentProxy,
   index: number,
   scale: number,
+  /** a CSS colour; 'transparent' keeps the parts nothing is drawn on clear */
+  background = '#ffffff',
 ): Promise<HTMLCanvasElement> {
   const page = await doc.getPage(index + 1)
   const viewport = page.getViewport({ scale })
@@ -34,7 +36,13 @@ export async function renderPage(
   canvas.height = Math.ceil(viewport.height)
   // The print intent renders without requestAnimationFrame, so it keeps going
   // when the tab is in the background instead of stalling until it is visible again.
-  await page.render({ canvas, viewport, background: '#ffffff', intent: 'print' }).promise
+  // pdf.js makes an opaque context for a canvas it is handed, which turns
+  // transparent parts black; a see-through render needs its own context
+  const target =
+    background === 'transparent'
+      ? { canvas: null, canvasContext: canvas.getContext('2d')! }
+      : { canvas }
+  await page.render({ ...target, viewport, background, intent: 'print' }).promise
   page.cleanup()
   return canvas
 }
