@@ -57,7 +57,7 @@
     "gifenc": "^1.0.3",
     "jszip": "^3.10.2",
     "libheif-js": "^1.23.5",
-    "mediabunny": "^1.58.0",
+    "mediabunny": "^1.62.1",
     "node-forge": "^1.4.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.3.289",
