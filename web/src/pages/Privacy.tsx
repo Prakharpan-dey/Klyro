@@ -16,8 +16,8 @@ const points = [
     body: 'Re-encoded images drop EXIF blocks, including camera details and GPS location. Photo Privacy shows you what a picture is carrying and takes it out without touching a pixel.',
   },
   {
-    title: 'One request can leave',
-    body: 'The optional planner sends your typed instruction plus file type, size and page count — never file contents, and file names only if you allow it.',
+    title: 'Nothing is sent at all',
+    body: 'The page makes no request beyond loading this site’s own files. The security policy forbids connecting anywhere else, so not even a file’s name or size can leave.',
   },
   {
     title: 'The camera, only when you ask',
