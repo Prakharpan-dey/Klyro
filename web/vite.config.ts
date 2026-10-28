@@ -17,30 +17,8 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
-  server: {
-    proxy: {
-      // local planner from `npm run dev` in ../api
-      '/api': {
-        target: 'http://localhost:3001',
-        rewrite: (p) => p.replace(/^\/api/, ''),
-      },
-    },
-  },
   preview: {
-    headers: csp
-      ? {
-          'Content-Security-Policy': csp.replace(
-            'connect-src',
-            'connect-src http://localhost:3001',
-          ),
-        }
-      : {},
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        rewrite: (p) => p.replace(/^\/api/, ''),
-      },
-    },
+    headers: csp ? { 'Content-Security-Policy': csp } : {},
   },
   build: {
     /*

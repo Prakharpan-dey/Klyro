@@ -1,6 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { poolStore } from '@/ops/image/pool'
-import { plannerUrl } from './planner'
 
 function useOnline() {
   return useSyncExternalStore(
@@ -47,5 +46,5 @@ export function useTelemetry() {
   const pool = useSyncExternalStore(poolStore.subscribe, poolStore.getSnapshot)
   const online = useOnline()
   const offOrigin = useOffOriginRequests()
-  return { pool, online, offOrigin, plannerConnected: Boolean(plannerUrl) }
+  return { pool, online, offOrigin }
 }
