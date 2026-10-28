@@ -107,3 +107,36 @@ export function presetBitrate(height: number, tier: QualityTier): number {
   }
   return Math.round(tiers[tier] * scale)
 }
+
+export interface ResizeBitrateParams {
+  source: Size
+  target: Size
+  /** the whole file, sound included */
+  sourceBytes: number
+  durationSec: number
+  audioBps: number
+}
+
+/**
+ * The bitrate for the same clip at another size.
+ *
+ * Bits per pixel are kept, so a smaller frame gets a smaller file at the look
+ * the original had. Capped at the high preset for that height, because a
+ * phone's own recording is often far richer than the frame needs, and a resize
+ * that comes out bigger than expected reads as broken. Upscaling gets no extra
+ * bits beyond that cap: there is no detail to spend them on.
+ */
+export function resizeBitrate({
+  source,
+  target,
+  sourceBytes,
+  durationSec,
+  audioBps,
+}: ResizeBitrateParams): number {
+  if (!(durationSec > 0)) throw new Error('The length of this video could not be read')
+
+  const sourceVideoBps = Math.max(MIN_VIDEO_BPS, (sourceBytes * 8) / durationSec - audioBps)
+  const scaled = sourceVideoBps * ((target.width * target.height) / (source.width * source.height))
+  const cap = presetBitrate(target.height, 'high')
+  return Math.round(Math.max(MIN_VIDEO_BPS, Math.min(scaled, cap)))
+}

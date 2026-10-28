@@ -3,7 +3,9 @@ import type { OutputFile, Progress } from '../types'
 import {
   budgetForTarget,
   estimateBytes,
+  fitHeight,
   presetBitrate,
+  resizeBitrate,
   suggestScale,
   type QualityTier,
 } from './bitrate'
@@ -231,4 +233,112 @@ export function stripAudio(
       options: { container, audio: { discard: true } },
     }
   })
+}
+
+export type QuarterTurn = 0 | 90 | 180 | 270
+
+export interface RotateVideoParams {
+  rotate: QuarterTurn
+  flip: boolean
+  /** re-encode so the pixels turn, instead of only flagging the turn */
+  bake: boolean
+}
+
+export function describeTurn(rotate: QuarterTurn, flip: boolean): string {
+  const turn = { 0: '', 90: 'turned right', 180: 'turned over', 270: 'turned left' }[rotate]
+  return [turn, flip ? 'mirrored' : ''].filter(Boolean).join(', ') || 'unchanged'
+}
+
+export function rotateVideo(
+  files: File[],
+  params: RotateVideoParams,
+  onProgress?: Progress,
+  signal?: AbortSignal,
+): Promise<OutputFile[]> {
+  return each(files, onProgress, signal, async (file) => {
+    const container = containerOf(file) ?? 'mp4'
+    return {
+      name: `${baseName(file.name)}-rotated.${CONTAINERS[container].extension}`,
+      note: describeTurn(params.rotate, params.flip),
+      options: {
+        container,
+        video: { rotate: params.rotate, flip: params.flip, bakeTransform: params.bake },
+      },
+    }
+  })
+}
+
+export interface ResizeVideoParams {
+  /** the new height of the picture as seen; the width follows the shape */
+  height: number
+}
+
+/** The new frame, its bitrate and the size it will come to, before the run. */
+export function planResize(probe: VideoProbe, height: number, sourceBytes: number) {
+  const source = { width: probe.width ?? 1280, height: probe.height ?? 720 }
+  const target = fitHeight(source, height)
+  const audioBps = probe.hasAudio ? AUDIO_BPS : 0
+  const videoBps = resizeBitrate({
+    source,
+    target,
+    sourceBytes,
+    durationSec: probe.durationSec,
+    audioBps,
+  })
+  return {
+    target,
+    videoBps,
+    bytes: estimateBytes(videoBps, audioBps, probe.durationSec),
+    upscale: target.height > source.height,
+  }
+}
+
+export function resizeVideo(
+  files: File[],
+  params: ResizeVideoParams,
+  onProgress?: Progress,
+  signal?: AbortSignal,
+): Promise<OutputFile[]> {
+  return each(files, onProgress, signal, async (file, probe) => {
+    const container = containerOf(file) ?? 'mp4'
+    const { target, videoBps } = planResize(probe, params.height, file.size)
+
+    return {
+      name: `${baseName(file.name)}-${target.height}p.${CONTAINERS[container].extension}`,
+      note: `${target.width}×${target.height}`,
+      options: {
+        container,
+        video: { width: target.width, height: target.height, bitrate: videoBps },
+      },
+    }
+  })
+}
+
+export type Mp3Bitrate = 128 | 192 | 320
+
+export interface Mp3Params {
+  kbps: Mp3Bitrate
+  /** seconds; leave both out for the whole file */
+  trim?: { start: number; end: number }
+}
+
+/** The sound of a video or audio file, as an MP3. */
+export function toMp3(
+  files: File[],
+  params: Mp3Params,
+  onProgress?: Progress,
+  signal?: AbortSignal,
+): Promise<OutputFile[]> {
+  return each(files, onProgress, signal, async (file) => ({
+    name: `${baseName(file.name)}.mp3`,
+    note: params.trim
+      ? `${params.kbps} kbps · ${seconds(params.trim.start)} to ${seconds(params.trim.end)}`
+      : `${params.kbps} kbps`,
+    options: {
+      container: 'mp4',
+      mp3: true,
+      audio: { bitrate: params.kbps * 1000 },
+      trim: params.trim,
+    },
+  }))
 }

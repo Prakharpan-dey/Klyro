@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { budgetForTarget, estimateBytes, fitHeight, presetBitrate, suggestScale } from './bitrate'
+import {
+  budgetForTarget,
+  estimateBytes,
+  fitHeight,
+  presetBitrate,
+  resizeBitrate,
+  suggestScale,
+} from './bitrate'
 import {
   allowsAudio,
   allowsVideo,
@@ -84,6 +91,35 @@ describe('presetBitrate', () => {
   it('asks for more bits as the frame grows', () => {
     expect(presetBitrate(1080, 'balanced')).toBeGreaterThan(presetBitrate(720, 'balanced'))
     expect(presetBitrate(720, 'high')).toBeGreaterThan(presetBitrate(720, 'small'))
+  })
+})
+
+describe('resizeBitrate', () => {
+  const hd = { width: 1920, height: 1080 }
+  // 60 s at about 6 Mbps of picture and 128 kbps of sound
+  const clip = { source: hd, sourceBytes: 46_000_000, durationSec: 60, audioBps: 128_000 }
+
+  it('keeps bits per pixel when the frame shrinks', () => {
+    const half = resizeBitrate({ ...clip, target: { width: 960, height: 540 } })
+    const sourceVideoBps = (clip.sourceBytes * 8) / clip.durationSec - clip.audioBps
+    // a quarter of the pixels gets a quarter of the bits
+    expect(half).toBe(Math.round(sourceVideoBps / 4))
+  })
+
+  it('never goes above the high preset for the new height', () => {
+    const rich = { ...clip, sourceBytes: 400_000_000 }
+    expect(resizeBitrate({ ...rich, target: { width: 854, height: 480 } })).toBe(
+      presetBitrate(480, 'high'),
+    )
+  })
+
+  it('does not drop below the floor on a starved source', () => {
+    const thin = { ...clip, sourceBytes: 600_000 }
+    expect(resizeBitrate({ ...thin, target: { width: 640, height: 360 } })).toBe(120_000)
+  })
+
+  it('refuses a clip with no length', () => {
+    expect(() => resizeBitrate({ ...clip, durationSec: 0, target: hd })).toThrow()
   })
 })
 

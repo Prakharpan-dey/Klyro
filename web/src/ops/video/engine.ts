@@ -93,10 +93,24 @@ export interface VideoRunOptions {
     bitrate?: number
     width?: number
     height?: number
+    /** clockwise, on top of whatever turn the file already carries */
+    rotate?: 0 | 90 | 180 | 270
+    /** mirror left to right */
+    flip?: boolean
+    /**
+     * Turn the pixels themselves instead of writing a rotation flag. Slower and
+     * one generation of quality, but some upload forms ignore the flag.
+     */
+    bakeTransform?: boolean
     discard?: boolean
   }
   audio?: { codec?: AudioCodec; bitrate?: number; discard?: boolean }
   trim?: { start?: number; end?: number }
+  /**
+   * Write an MP3 instead of the container: sound only. No browser ships an MP3
+   * encoder, so a WebAssembly one is loaded for this, and only for this.
+   */
+  mp3?: boolean
   signal?: AbortSignal
   /** 0 to 1, within this one file */
   onFraction?: (fraction: number) => void
@@ -116,6 +130,16 @@ const DROP_REASONS: Record<string, string> = {
   cannot_copy: 'it could not be copied without re-encoding',
 }
 
+let mp3Ready: Promise<void> | null = null
+
+/** Registers the WebAssembly MP3 encoder once per tab, on first use. */
+function mp3Encoder(): Promise<void> {
+  mp3Ready ??= import('@mediabunny/mp3-encoder').then(({ registerMp3Encoder }) =>
+    registerMp3Encoder(),
+  )
+  return mp3Ready
+}
+
 export async function runConversion(file: File, options: VideoRunOptions): Promise<VideoRunResult> {
   if (file.size > MAX_VIDEO_BYTES) {
     throw new VideoEngineError(
@@ -124,8 +148,12 @@ export async function runConversion(file: File, options: VideoRunOptions): Promi
     )
   }
 
-  const capabilities = await probeCapability()
-  if (!capabilities.ok) throw new VideoEngineError('no-webcodecs', capabilities.reason!)
+  // sound alone needs no video encoder, so a browser without one can still do it
+  const capabilities = options.mp3 ? undefined : await probeCapability()
+  if (capabilities && !capabilities.ok) {
+    throw new VideoEngineError('no-webcodecs', capabilities.reason!)
+  }
+  if (options.mp3) await mp3Encoder()
 
   const {
     ALL_FORMATS,
@@ -134,6 +162,7 @@ export async function runConversion(file: File, options: VideoRunOptions): Promi
     Conversion,
     ConversionCanceledError,
     Input,
+    Mp3OutputFormat,
     Mp4OutputFormat,
     Output,
     Quality,
@@ -143,16 +172,20 @@ export async function runConversion(file: File, options: VideoRunOptions): Promi
   const spec = CONTAINERS[options.container]
   const input = new Input({ formats: ALL_FORMATS, source: new BlobSource(file) })
   const output = new Output({
-    format: options.container === 'mp4' ? new Mp4OutputFormat() : new WebMOutputFormat(),
+    format: options.mp3
+      ? new Mp3OutputFormat()
+      : options.container === 'mp4'
+        ? new Mp4OutputFormat()
+        : new WebMOutputFormat(),
     target: new BufferTarget(),
   })
 
-  const wantsVideo = !options.video?.discard
+  const wantsVideo = !options.video?.discard && !options.mp3
 
   const conversion = await Conversion.init({
     input,
     output,
-    video: options.video?.discard
+    video: !wantsVideo
       ? { discard: true }
       : {
           codec: resolveVideoCodec(options.container, options.video?.codec),
@@ -161,6 +194,9 @@ export async function runConversion(file: File, options: VideoRunOptions): Promi
           // both sides given means a box, and a box needs a rule for filling it;
           // ours are worked out from the source ratio, so nothing is letterboxed
           ...(options.video?.width && options.video?.height ? { fit: 'contain' as const } : {}),
+          rotate: options.video?.rotate,
+          flip: options.video?.flip,
+          allowTransformationMetadata: !options.video?.bakeTransform,
           // a bare number is read as a quality *level*; the bitrate needs naming
           ...(options.video?.bitrate
             ? { quality: new Quality({ bitrate: options.video.bitrate }) }
@@ -169,7 +205,7 @@ export async function runConversion(file: File, options: VideoRunOptions): Promi
     audio: options.audio?.discard
       ? { discard: true }
       : {
-          codec: resolveAudioCodec(options.container, options.audio?.codec),
+          codec: options.mp3 ? 'mp3' : resolveAudioCodec(options.container, options.audio?.codec),
           ...(options.audio?.bitrate
             ? { quality: new Quality({ bitrate: options.audio.bitrate }) }
             : {}),
@@ -184,9 +220,17 @@ export async function runConversion(file: File, options: VideoRunOptions): Promi
     )
 
   if (!conversion.isValid) {
+    if (options.mp3) {
+      throw new VideoEngineError(
+        'undecodable',
+        dropped[0]
+          ? `The sound in this file cannot be read here — ${dropped[0]}.`
+          : 'This file has no sound in it to save.',
+      )
+    }
     const why = dropped[0] ?? 'nothing in this file could be converted'
     throw new VideoEngineError(
-      wantsVideo && !capabilities.video[resolveVideoCodec(options.container, options.video?.codec)]
+      wantsVideo && !capabilities?.video[resolveVideoCodec(options.container, options.video?.codec)]
         ? 'unencodable'
         : 'undecodable',
       `This video cannot be converted here — ${why}.`,
@@ -215,7 +259,7 @@ export async function runConversion(file: File, options: VideoRunOptions): Promi
   const buffer = output.target.buffer
   if (!buffer) throw new VideoEngineError('unencodable', 'The converted video came back empty')
 
-  const type = wantsVideo ? spec.mime : spec.audioMime
+  const type = options.mp3 ? 'audio/mpeg' : wantsVideo ? spec.mime : spec.audioMime
   const blob = new Blob([buffer], { type })
   // let the ArrayBuffer go now that the Blob owns a copy; these are tens of MB
   output.target.buffer = null
