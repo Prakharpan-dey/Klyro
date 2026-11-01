@@ -61,7 +61,7 @@
     "node-forge": "^1.4.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.3.289",
-    "radix-ui": "^1.6.7",
+    "radix-ui": "^1.8.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router": "^8.4.0",
